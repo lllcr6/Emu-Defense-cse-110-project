@@ -201,9 +201,11 @@ export class GameIntroView {
     });
     this.group.add(pageIndicator);
 
+    const promptY = STAGE_HEIGHT - 150;
+
     const promptPanel = new Konva.Rect({
       x: 100,
-      y: STAGE_HEIGHT - 138,
+      y: promptY,
       width: STAGE_WIDTH - 240,
       height: 46,
       fill: "rgba(55, 33, 15, 0.1)",
@@ -215,7 +217,7 @@ export class GameIntroView {
 
     const spaceKey = new Konva.Text({
       x: 122,
-      y: STAGE_HEIGHT - 124,
+      y: promptY + 14,
       width: 130,
       text: isLastPage ? "[ SPACE ]" : "[ SPACE ] NEXT",
       fontSize: 15,
@@ -228,7 +230,7 @@ export class GameIntroView {
 
     const escKey = new Konva.Text({
       x: STAGE_WIDTH - 258,
-      y: STAGE_HEIGHT - 124,
+      y: promptY + 14,
       width: 130,
       text: "[ ESC ] SKIP",
       fontSize: 15,
@@ -241,7 +243,7 @@ export class GameIntroView {
 
     const instruction = new Konva.Text({
       x: 258,
-      y: STAGE_HEIGHT - 124,
+      y: promptY + 14,
       width: STAGE_WIDTH - 520,
       text: isLastPage ? "Deploy to the farm and begin the defense." : "Continue through the briefing or skip straight into the game.",
       fontSize: 13,
