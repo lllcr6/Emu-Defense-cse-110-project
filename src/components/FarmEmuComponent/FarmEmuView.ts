@@ -147,6 +147,7 @@ export class FarmEmuView {
 		this.healthBarBg.remove();
 		this.healthBarFill.remove();
 		this.healthText.remove();
+		this.parentGroup.getLayer()?.batchDraw();
 	}
 
 	private syncHealthUi(): void {

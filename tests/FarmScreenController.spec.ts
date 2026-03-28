@@ -10,6 +10,7 @@ import { GameItem } from "../src/constants.ts";
 class FakeFarmScreenView {
   spawnEmusMock = vi.fn();
   clearEmusMock = vi.fn();
+  private readonly removeEmusHandler: () => void;
   menuButtonHandler: (() => void) | null = null;
   menuSaveHandler: (() => void) | null = null;
   menuBackHandler: (() => void) | null = null;
@@ -48,9 +49,10 @@ class FakeFarmScreenView {
     _handleKeydown: (event: KeyboardEvent) => void,
     _handleEndGame: () => void,  // Changed from handleStartDay to handleEndGame
     _registerEmu: (emu: FarmEmuController) => void,
-    _removeEmus: () => void,
+    removeEmus: () => void,
     registerPlanter: (planter: FarmPlanterController) => void,
   ) {
+    this.removeEmusHandler = removeEmus;
     // This should be called if registerPlanter is a function
     if (typeof registerPlanter === 'function') {
       let harvestHandler: (() => void) | null = null;
@@ -81,6 +83,7 @@ class FakeFarmScreenView {
         isEmpty: vi.fn(() => isEmpty),
         takeDamage: vi.fn(() => false),
         destroyCrop: vi.fn(),
+        plantForNewGame: vi.fn(),
       };
       registerPlanter(planter as unknown as FarmPlanterController);
     }
@@ -106,6 +109,7 @@ class FakeFarmScreenView {
 
   clearEmus(): void {
     this.clearEmusMock();
+    this.removeEmusHandler();
   }
 
   setMenuButtonHandler = vi.fn((handler: () => void) => {
@@ -371,6 +375,26 @@ describe("FarmScreenController", () => {
     expect(latestView?.hideEggMenuOverlay).toHaveBeenCalled();
     expect(latestView?.updateRound).toHaveBeenCalled();
     expect(latestView?.updateTimer).toHaveBeenCalledWith(60);
+  });
+
+  it("removes existing emus before starting a new game", () => {
+    const { controller } = createController();
+    const emu = {
+      active: true,
+      remove() {
+        this.active = false;
+      },
+      isActive() {
+        return this.active;
+      },
+    } as unknown as FarmEmuController;
+
+    (controller as any).registerEmu(emu);
+
+    controller.startGame(true);
+
+    expect(emu.isActive()).toBe(false);
+    expect((controller as any).emus).toHaveLength(0);
   });
 
   it("enables the next-phase button immediately when the last emu is defeated", () => {

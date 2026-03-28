@@ -161,7 +161,6 @@ export class FarmScreenController extends ScreenController {
 			this.defenses = [];
 			this.gunCooldowns.clear();
 			this.view.clearDefenses();
-			this.emus = [];
 			this.view.clearEmus();
 			this.selectedDefenseType = null;
 			this.isPlanningPhase = false;
