@@ -355,7 +355,7 @@ export class PlanningPhaseView implements View {
 
 	private createMinigameOverlay(): void {
 		const panelWidth = 560;
-		const panelHeight = 360;
+		const panelHeight = 392;
 		const panelX = (STAGE_WIDTH - panelWidth) / 2;
 		const panelY = 300;
 
@@ -465,7 +465,7 @@ export class PlanningPhaseView implements View {
 
 		const skipButton = new Konva.Group({
 			x: panelX + 40,
-			y: panelY + 286,
+			y: panelY + 320,
 			cursor: "pointer",
 			listening: true,
 		});
@@ -507,7 +507,7 @@ export class PlanningPhaseView implements View {
 
 		const continueButton = new Konva.Group({
 			x: panelX + panelWidth - 260,
-			y: panelY + 286,
+			y: panelY + 320,
 			cursor: "pointer",
 			listening: true,
 		});
