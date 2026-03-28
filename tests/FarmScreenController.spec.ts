@@ -31,6 +31,8 @@ class FakeFarmScreenView {
   clearDefenses = vi.fn();
   setPlacementHint = vi.fn();
   setPlacementCursor = vi.fn();
+  setStartRoundButtonEnabled = vi.fn();
+  setStartRoundTooltip = vi.fn();
   getDefensesLayer = vi.fn(() => ({
     add: vi.fn(),
     draw: vi.fn(),
@@ -96,6 +98,7 @@ class FakeFarmScreenView {
 }
 
 let latestView: FakeFarmScreenView | null = null;
+let latestPlanningPhase: any = null;
 
 vi.mock("../src/screens/FarmScreen/FarmScreenView.ts", () => ({
   FarmScreenView: vi.fn((
@@ -117,21 +120,25 @@ vi.mock("../src/screens/FarmScreen/FarmScreenView.ts", () => ({
 }));
 
 vi.mock("../src/screens/PlanningPhaseScreen/PlanningPhaseController.ts", () => ({
-  PlanningPhaseController: vi.fn(() => ({
-    getView: vi.fn(() => ({
-      getGroup: vi.fn(() => ({
-        visible: vi.fn(),
+  PlanningPhaseController: vi.fn(() => {
+    latestPlanningPhase = {
+      show: vi.fn(),
+      hide: vi.fn(),
+      setDefenseInventory: vi.fn(),
+      setOnDefenseSelected: vi.fn(),
+      setOnStartRound: vi.fn(),
+      deselectAll: vi.fn(),
+      clearSelection: vi.fn(),
+      setOnPlaceDefenses: vi.fn(),
+      setPlacementMode: vi.fn(),
+      getView: vi.fn(() => ({
+        getGroup: vi.fn(() => ({
+          visible: vi.fn(),
+        })),
       })),
-    })),
-    show: vi.fn(),
-    hide: vi.fn(),
-    setDefenseInventory: vi.fn(),
-    setOnDefenseSelected: vi.fn(),
-    setOnStartRound: vi.fn(),
-    deselectAll: vi.fn(),
-    clearSelection: vi.fn(),
-    setOnPlaceDefenses: vi.fn(),  // Added missing method
-  })),
+    };
+    return latestPlanningPhase;
+  }),
 }));
 
 import { FarmScreenController } from "../src/screens/FarmScreen/FarmScreenController.ts";
@@ -165,6 +172,7 @@ describe("FarmScreenController", () => {
       localStorage.clear();
     }
     latestView = null;
+    latestPlanningPhase = null;
     globalThis.requestAnimationFrame = vi.fn().mockReturnValue(0) as unknown as typeof requestAnimationFrame;
   });
 
@@ -210,5 +218,133 @@ describe("FarmScreenController", () => {
     expect(status.getItemCount("mine")).toBe(0);
     expect(latestView?.deployMineAtMouse).toHaveBeenCalledTimes(1);
     expect(latestView?.updateMineCount).toHaveBeenCalledWith(0);
+  });
+
+  it("saves progress and returns to the main menu when Save and Exit is used", () => {
+    const { controller, status, switcher } = createController();
+
+    status.addMoney(25);
+    status.addToInventory("sandbag", 2);
+    status.upgradeDefenseLevel("sandbag");
+    expect(status.hasSavedGame()).toBe(true);
+
+    (controller as any).handleMenuSaveAndExit();
+
+    expect(switcher.switchToScreen).toHaveBeenCalledWith({ type: "main_menu" });
+    expect(latestPlanningPhase?.setPlacementMode).toHaveBeenCalledWith(false);
+    expect(latestPlanningPhase?.clearSelection).toHaveBeenCalled();
+    expect(latestPlanningPhase?.hide).toHaveBeenCalled();
+
+    const reloadedStatus = new GameStatusController();
+    expect(reloadedStatus.getMoney()).toBe(status.getMoney());
+    expect(reloadedStatus.getItemCount("sandbag")).toBe(2);
+    expect(reloadedStatus.getDefenseLevel("sandbag")).toBe(2);
+  });
+
+  it("updates round and timer immediately when entering next planning phase", () => {
+    const { controller, status } = createController();
+
+    status.endDay();
+    (controller as any).timeRemaining = 17;
+
+    (controller as any).showPlanningPhase();
+
+    expect(latestView?.updateRound).toHaveBeenCalledWith(2);
+    expect(latestView?.updateTimer).toHaveBeenCalledWith(60);
+  });
+
+  it("enables the next-phase button immediately when the last emu is defeated", () => {
+    const { controller } = createController();
+
+    const emu = {
+      active: true,
+      remove() {
+        this.active = false;
+      },
+      isActive() {
+        return this.active;
+      },
+    } as unknown as FarmEmuController;
+
+    (controller as any).registerEmu(emu);
+    (controller as any).isPlanningPhase = false;
+    (controller as any).isDefensePlacementMode = false;
+    (controller as any).gameTimer = 123;
+
+    emu.remove();
+
+    expect(latestView?.setStartRoundButtonEnabled).toHaveBeenLastCalledWith(true);
+    expect(latestView?.setStartRoundTooltip).toHaveBeenLastCalledWith(
+      "All emus defeated. Click to skip to the next phase",
+    );
+  });
+
+  it("does not end the game when all crops are gone during defense placement", () => {
+    const { controller, switcher } = createController();
+
+    (controller as any).isPlanningPhase = false;
+    (controller as any).isDefensePlacementMode = true;
+    (controller as any).gameTimer = null;
+    (controller as any).planters = [
+      {
+        isEmpty: vi.fn(() => true),
+        getView: vi.fn(),
+        takeDamage: vi.fn(),
+      },
+    ];
+
+    (controller as any).checkForCropLoss();
+
+    expect(switcher.switchToScreen).not.toHaveBeenCalled();
+  });
+
+  it("machine gun fires at a nearby emu and consumes durability", () => {
+    const { controller } = createController();
+    const defense = {
+      getType: vi.fn(() => "machine_gun"),
+      getView: vi.fn(() => ({
+        x: () => 100,
+        y: () => 100,
+      })),
+      isActive: vi.fn(() => true),
+      showAttackEffect: vi.fn(),
+      takeDamage: vi.fn(),
+      remove: vi.fn(),
+    } as unknown as {
+      getType: () => string;
+      getView: () => { x: () => number; y: () => number };
+      isActive: () => boolean;
+      showAttackEffect: (x: number, y: number) => void;
+      takeDamage: (amount?: number) => void;
+      remove: () => void;
+    };
+
+    const emu = {
+      setSpeedModifier: vi.fn(),
+      setBlocked: vi.fn(),
+      getView: vi.fn(() => ({
+        x: () => 260,
+        y: () => 100,
+        width: () => 36,
+        height: () => 36,
+      })),
+      reduceHealth: vi.fn(),
+      getMaxHealth: vi.fn(() => 100),
+      remove: vi.fn(),
+      isActive: vi.fn(() => true),
+    } as unknown as FarmEmuController;
+
+    (controller as any).defenses = [defense];
+    (controller as any).emus = [emu];
+    (controller as any).isPlanningPhase = false;
+    (controller as any).isDefensePlacementMode = false;
+
+    (controller as any).checkDefenseEmuInteractions(0.016);
+
+    expect(defense.showAttackEffect).toHaveBeenCalled();
+    expect(emu.reduceHealth).toHaveBeenCalledWith(40);
+    expect(emu.remove).not.toHaveBeenCalled();
+    expect(defense.takeDamage).toHaveBeenCalledWith(1);
+    expect((controller as any).gunCooldowns.get(defense)).toBeCloseTo(0.5);
   });
 });
