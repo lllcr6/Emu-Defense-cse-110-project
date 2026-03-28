@@ -8,8 +8,11 @@ You run a wheat farm under constant pressure from emus. The main game revolves a
 
 - Your main objective is to protect every crop on your farm.
 - If the emus eat all of your crops, the game ends.
+- You can pause the game from the in-game menu, save and exit to the main menu, then continue the same run later from the main menu.
 - The hunting mini-game lets you fight emus directly and earn points by defeating them.
 - The raid mini-game lets you sneak into emu territory, steal eggs, and sell them for money.
+- Defense items such as barbed wire, sandbags, machine guns, and mines help you slow down, block, or defeat emus on the farm.
+- The daily quiz covers emus, Great Emu War history, and gameplay tips, and a correct answer rewards you with a mine for future defense.
 - The end-of-game leaderboard stores your previous scores and survival times in browser storage, so you can compare runs over time.
 
 ## Requirements
@@ -66,14 +69,6 @@ Open the interactive Vitest UI:
 ```bash
 npm run test:ui
 ```
-
-## Controls and Flow
-
-- Use the main menu to start a new game.
-- Move around the farm, plant crops, and manage your defenses.
-- Pay attention to the day cycle and morning events.
-- Enter mini-games when the game switches modes.
-- Try to survive as long as possible and finish with the highest score you can.
 
 ## Project Structure
 
