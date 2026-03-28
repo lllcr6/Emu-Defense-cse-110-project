@@ -5,7 +5,7 @@ import { DefenseController } from "../../components/DefenseComponent/DefenseCont
 import type { DefenseType } from "../../components/DefenseComponent/DefenseModel.ts";
 import { FarmEmuController } from "../../components/FarmEmuComponent/FarmEmuController.ts";
 import type { FarmPlanterController } from "../../components/FarmPlanterComponent/FarmPlanterController.ts";
-import { GAME_DURATION, GameItem } from "../../constants.ts";
+import { CROP_HARVEST_REWARD, GAME_DURATION, GameItem } from "../../constants.ts";
 import { GameStatusController } from "../../controllers/GameStatusController.ts";
 import { AudioManager } from "../../services/AudioManager.ts";
 import type { ScreenSwitcher } from "../../types.ts";
@@ -494,7 +494,7 @@ export class FarmScreenController extends ScreenController {
 		this.planters.push(planter);
 		planter.setStatus(this.status);
 		planter.setOnHarvest(() => {
-			this.status.addToInventory(GameItem.Crop, 1);
+			this.status.addToInventory(GameItem.Crop, CROP_HARVEST_REWARD);
 			this.status.incrementScore(50);
 			this.view.updateScore(this.status.getFinalScore());
 			this.audio.playSfx("harvest");

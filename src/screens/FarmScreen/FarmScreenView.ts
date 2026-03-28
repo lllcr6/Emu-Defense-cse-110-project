@@ -166,7 +166,7 @@ export class FarmScreenView implements View {
 		this.cropText = new Konva.Text({
 			x: 10,
 			y: 25,
-			text: "Crops: 0",
+			text: "Crop Seeds: 0",
 			fontSize: 14,
 			fontFamily: "Arial",
 			fill: "white",
@@ -612,7 +612,7 @@ export class FarmScreenView implements View {
 	}
 
 	updateCropCount(count: number): void {
-		this.cropText.text(`Crops: ${count}`);
+		this.cropText.text(`Crop Seeds: ${count}`);
 		this.group.getLayer()?.draw();
 	}
 

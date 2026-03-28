@@ -9,7 +9,7 @@ import {
     type UpgradableDefenseType,
     MAX_DEFENSE_LEVEL,
 } from "../../components/DefenseComponent/DefenseModel.ts";
-import { GameItem, ItemCosts, CROP_BUY_COST } from "../../constants.ts";
+import { GameItem, CROP_BUY_COST, CROP_SELL_PRICE, EGG_SELL_PRICE } from "../../constants.ts";
 
 /**
  * MorningEventsScreenController - Handles morning screen interactions
@@ -114,7 +114,7 @@ export class MorningEventsScreenController extends ScreenController {
     }
 
     private handleSell(): void {
-        const price = ItemCosts[GameItem.Crop];
+        const price = CROP_SELL_PRICE;
         if (this.status.removeFromInventory(GameItem.Crop, 1)) {
             this.status.addToInventory(GameItem.Money, price);
             this.audio.playSfx("sell");
@@ -124,7 +124,7 @@ export class MorningEventsScreenController extends ScreenController {
     }
 
     private handleSellEgg(): void {
-        const price = ItemCosts[GameItem.Egg];
+        const price = EGG_SELL_PRICE;
         if (this.status.removeFromInventory(GameItem.Egg, 1)) {
             this.status.addToInventory(GameItem.Money, price);
             this.audio.playSfx("sell");

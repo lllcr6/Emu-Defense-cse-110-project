@@ -5,6 +5,7 @@ import type { AudioManager } from "../src/services/AudioManager.ts";
 import type { FarmPlanterController } from "../src/components/FarmPlanterComponent/FarmPlanterController.ts";
 import type { FarmEmuController } from "../src/components/FarmEmuComponent/FarmEmuController.ts";
 import type { MorningEventsScreenController } from "../src/screens/MorningEventsScreen/MorningEventsScreenController.ts";
+import { GameItem } from "../src/constants.ts";
 
 class FakeFarmScreenView {
   spawnEmusMock = vi.fn();
@@ -50,9 +51,16 @@ class FakeFarmScreenView {
   ) {
     // This should be called if registerPlanter is a function
     if (typeof registerPlanter === 'function') {
-      const planterTarget = { id: "planter" };
+      let harvestHandler: (() => void) | null = null;
+      const planterTarget = {
+        id: "planter",
+        triggerHarvest: () => harvestHandler?.(),
+      };
+      latestPlanter = planterTarget;
       const planter = {
-        setOnHarvest: vi.fn(),
+        setOnHarvest: vi.fn((handler: () => void) => {
+          harvestHandler = handler;
+        }),
         advanceDay: vi.fn(),
         getView: vi.fn(() => planterTarget),
         setStatus: vi.fn(),
@@ -99,6 +107,7 @@ class FakeFarmScreenView {
 
 let latestView: FakeFarmScreenView | null = null;
 let latestPlanningPhase: any = null;
+let latestPlanter: { triggerHarvest: () => void } | null = null;
 
 vi.mock("../src/screens/FarmScreen/FarmScreenView.ts", () => ({
   FarmScreenView: vi.fn((
@@ -173,6 +182,7 @@ describe("FarmScreenController", () => {
     }
     latestView = null;
     latestPlanningPhase = null;
+    latestPlanter = null;
     globalThis.requestAnimationFrame = vi.fn().mockReturnValue(0) as unknown as typeof requestAnimationFrame;
   });
 
@@ -192,6 +202,15 @@ describe("FarmScreenController", () => {
     controller.setMorningController(morningStub);
     // We can't directly verify this, but at least the method should be callable
     expect(() => controller.setMorningController(morningStub)).not.toThrow();
+  });
+
+  it("harvests five crop seeds when a planter matures", () => {
+    const { status } = createController();
+    expect(latestPlanter).not.toBeNull();
+
+    latestPlanter!.triggerHarvest();
+
+    expect(status.getItemCount(GameItem.Crop)).toBe(5);
   });
 
   it("deploys a mine when handleDeployMine is called and player has mines", () => {

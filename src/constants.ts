@@ -32,17 +32,20 @@ export const GameItem = {
 
 export type GameItem = typeof GameItem[keyof typeof GameItem];
 
-// Centralized item costs/prices
-// Note: Crop buy cost is 10, sell price is 5 (loss on purpose for game balance)
-export const ItemCosts: Record<GameItem, number> = {
-    [GameItem.Money]: 1,
-    [GameItem.Crop]: 5,  // Sell price (buy cost is hardcoded at 10 in morning events)
-    [GameItem.Mine]: 20,
-    [GameItem.Egg]: 35,
-    [GameItem.BarbedWire]: 15,
-    [GameItem.Sandbag]: 20,
-    [GameItem.MachineGun]: 25,
-};
+// Morning market pricing, split by direction so buy and sell values stay obvious.
+export const MORNING_MARKET_PRICES = {
+    buy: {
+        [GameItem.Crop]: 10,
+    },
+    sell: {
+        [GameItem.Crop]: 3,
+        [GameItem.Egg]: 35,
+    },
+} as const;
 
-// Crop buy cost (separate from sell price)
-export const CROP_BUY_COST = 10;
+export const CROP_BUY_COST = MORNING_MARKET_PRICES.buy[GameItem.Crop];
+export const CROP_SELL_PRICE = MORNING_MARKET_PRICES.sell[GameItem.Crop];
+export const EGG_SELL_PRICE = MORNING_MARKET_PRICES.sell[GameItem.Egg];
+
+// Harvested crops are turned into 5 new crop seeds.
+export const CROP_HARVEST_REWARD = 5;

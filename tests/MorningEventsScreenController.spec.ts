@@ -119,8 +119,8 @@ describe("MorningEventsScreenController", () => {
 		const STARTING_MONEY = status.getMoney(); // Get the actual starting money (100)
 		status.addToInventory(GameItem.Crop, 2);
         
-        // Assuming selling a crop yields $5
-		const SELL_PROFIT = 5;
+        // Selling a crop seed yields $3
+		const SELL_PROFIT = 3;
 
 		(controller as unknown as { handleSell(): void }).handleSell();
         

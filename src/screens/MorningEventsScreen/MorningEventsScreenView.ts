@@ -1,7 +1,8 @@
 import Konva from "konva";
 import type { View } from "../../types.ts";
-import { STAGE_HEIGHT, STAGE_WIDTH } from "../../constants.ts";
+import { CROP_BUY_COST, CROP_SELL_PRICE, EGG_SELL_PRICE, STAGE_HEIGHT, STAGE_WIDTH } from "../../constants.ts";
 import {
+    DEFENSE_CONFIGS,
     MAX_DEFENSE_LEVEL,
     getDefenseStats,
     getDefenseUpgradeCost,
@@ -190,7 +191,7 @@ export class MorningEventsScreenView implements View {
         this.inventoryText = new Konva.Text({
             x: STAGE_WIDTH / 2,
             y: 170,
-            text: "Crops: 0",
+            text: "Crop Seeds: 0",
             fontSize: 22,
             fontFamily: "Arial",
             fill: "#455a64",
@@ -239,7 +240,7 @@ export class MorningEventsScreenView implements View {
     }
 
     updateInventory(cropCount: number, eggCount: number = 0): void {
-        this.inventoryText.text(`Crops: ${cropCount} | Eggs: ${eggCount}`);
+        this.inventoryText.text(`Crop Seeds: ${cropCount} | Eggs: ${eggCount}`);
         this.inventoryText.offsetX(this.inventoryText.width() / 2);
         this.group.getLayer()?.draw();
     }
@@ -428,7 +429,7 @@ export class MorningEventsScreenView implements View {
         const moneyDisplay = new Konva.Text({
             x: STAGE_WIDTH / 2,
             y: panelY + 55,
-            text: `Money: $${currentMoney}   |   Crops: ${cropCount}   |   Eggs: ${eggCount}`,
+            text: `Money: $${currentMoney}   |   Crop Seeds: ${cropCount}   |   Eggs: ${eggCount}`,
             fontSize: 18,
             fontFamily: "Arial",
             fill: "#27ae60",
@@ -453,18 +454,18 @@ export class MorningEventsScreenView implements View {
             {
                 name: "Crop Seeds",
                 description: "Plant fresh wheat on an empty field.",
-                priceLabel: "Buy for $10",
+                priceLabel: `Buy for $${CROP_BUY_COST}`,
                 priceColor: "#2e7d32",
                 ownedLabel: `Owned: ${cropCount}`,
                 actionLabel: "Buy",
                 actionColor: "#2e7d32",
-                actionEnabled: currentMoney >= 10,
+                actionEnabled: currentMoney >= CROP_BUY_COST,
                 onClick: () => this.buyCropHandler?.(),
             },
             {
-                name: "Harvested Crops",
-                description: "Sell stored crops for quick cash.",
-                priceLabel: "Sell for $5",
+                name: "Crop Seeds",
+                description: "Sell stored crop seeds for quick cash.",
+                priceLabel: `Sell for $${CROP_SELL_PRICE}`,
                 priceColor: "#c62828",
                 ownedLabel: `Stored: ${cropCount}`,
                 actionLabel: "Sell",
@@ -475,7 +476,7 @@ export class MorningEventsScreenView implements View {
             {
                 name: "Emu Eggs",
                 description: "Trade stolen eggs for a strong payout.",
-                priceLabel: "Sell for $35",
+                priceLabel: `Sell for $${EGG_SELL_PRICE}`,
                 priceColor: "#c62828",
                 ownedLabel: `Stored: ${eggCount}`,
                 actionLabel: "Sell",
@@ -589,9 +590,9 @@ export class MorningEventsScreenView implements View {
         popup.add(defenseTitle);
 
         const defenses = [
-            { type: "barbed_wire", name: "Barbed Wire", cost: 10, description: "Slows emus down" },
-            { type: "sandbag", name: "Sandbag Barrier", cost: 25, description: "Blocks emus temporarily" },
-            { type: "machine_gun", name: "Machine Gun Nest", cost: 50, description: "Auto-shoots nearby emus" },
+            { type: "barbed_wire", name: "Barbed Wire", description: "Slows emus down" },
+            { type: "sandbag", name: "Sandbag Barrier", description: "Blocks emus temporarily" },
+            { type: "machine_gun", name: "Machine Gun Nest", description: "Auto-shoots nearby emus" },
         ];
 
         const cardGap = 12;
@@ -602,6 +603,7 @@ export class MorningEventsScreenView implements View {
 
         defenses.forEach((defense, index) => {
             const defenseType = defense.type as UpgradableDefenseType;
+            const defenseConfig = DEFENSE_CONFIGS[defenseType];
             const level = defenseLevels[defenseType];
             const stats = getDefenseStats(defenseType, level);
             const upgradeCost = level >= MAX_DEFENSE_LEVEL ? null : getDefenseUpgradeCost(defenseType, level);
@@ -668,10 +670,10 @@ export class MorningEventsScreenView implements View {
             const costText = new Konva.Text({
                 x: cardX + 14,
                 y: startY + 98,
-                text: `Cost: $${defense.cost}`,
+                text: `Cost: $${defenseConfig.cost}`,
                 fontSize: 13,
                 fontFamily: "Arial",
-                fill: currentMoney >= defense.cost ? "#27ae60" : "#e74c3c",
+                fill: currentMoney >= defenseConfig.cost ? "#27ae60" : "#e74c3c",
                 fontStyle: "bold",
             });
             itemGroup.add(costText);
@@ -690,15 +692,15 @@ export class MorningEventsScreenView implements View {
             const buyBtn = new Konva.Group({
                 x: cardX + 14,
                 y: startY + 114,
-                cursor: currentMoney >= defense.cost ? "pointer" : "not-allowed",
+                cursor: currentMoney >= defenseConfig.cost ? "pointer" : "not-allowed",
             });
 
             const buyRect = new Konva.Rect({
                 width: 76,
                 height: 28,
-                fill: currentMoney >= defense.cost ? "#27ae60" : "#95a5a6",
+                fill: currentMoney >= defenseConfig.cost ? "#27ae60" : "#95a5a6",
                 cornerRadius: 7,
-                stroke: currentMoney >= defense.cost ? "#229954" : "#7f8c8d",
+                stroke: currentMoney >= defenseConfig.cost ? "#229954" : "#7f8c8d",
                 strokeWidth: 1.5,
             });
             buyBtn.add(buyRect);
@@ -716,7 +718,7 @@ export class MorningEventsScreenView implements View {
             buyText.offsetX(buyText.width() / 2);
             buyBtn.add(buyText);
 
-            if (currentMoney >= defense.cost) {
+            if (currentMoney >= defenseConfig.cost) {
                 buyBtn.on("click", () => {
                     this.shopPurchaseHandler?.(defense.type);
                 });
