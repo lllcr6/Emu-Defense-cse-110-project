@@ -335,7 +335,7 @@ describe("FarmScreenController", () => {
 
     expect(defense.showAttackEffect).toHaveBeenCalled();
     expect(emu.reduceHealth).toHaveBeenCalledWith(40);
-    expect(emu.remove).toHaveBeenCalled();
+    expect(emu.remove).not.toHaveBeenCalled();
     expect(defense.takeDamage).toHaveBeenCalledWith(1);
     expect((controller as any).gunCooldowns.get(defense)).toBeCloseTo(0.5);
   });

@@ -878,8 +878,6 @@ export class FarmScreenController extends ScreenController {
 							);
 							closestEmu.reduceHealth(40);
 						}
-						closestEmu.remove();
-						emusToRemove.push(closestEmu);
 						defense.takeDamage(1);
 						this.gunCooldowns.set(defense, 0.5);
 						if (!defense.isActive()) {

@@ -1,36 +1,43 @@
 # CSE 110 Emu Defense
 
-`CSE 110 Emu Defense` is a browser-based strategy and action game inspired by the Great Emu War.
+`CSE 110 Emu Defense` is a fast-paced browser strategy game where you defend a wheat farm from relentless emu attacks.
 
-You run a wheat farm under constant pressure from emus. The main game revolves around keeping your crops alive, managing your resources, and surviving as many days as you can.
+## Live Demo
+
+Play now:
+
+[https://lllcr6.github.io/cse-110-project/](https://lllcr6.github.io/cse-110-project/)
+
+## About
+
+Set on a struggling wheat farm during the Great Emu War, the game blends resource management, real-time defense, and mini-games into one chaotic survival run. Grow crops, build defenses, raid emu territory, and keep your farm alive for as many days as you can.
 
 ## Gameplay
 
-- Your main objective is to protect every crop on your farm.
-- If the emus eat all of your crops, the game ends.
-- You can pause the game from the in-game menu, save and exit to the main menu, then continue the same run later from the main menu.
-- The hunting mini-game lets you fight emus directly and earn points by defeating them.
-- The raid mini-game lets you sneak into emu territory, steal eggs, and sell them for money.
-- Defense items such as barbed wire, sandbags, machine guns, and mines help you slow down, block, or defeat emus on the farm.
-- The daily quiz covers emus, Great Emu War history, and gameplay tips, and a correct answer rewards you with a mine for future defense.
-- The end-of-game leaderboard stores your previous scores and survival times in browser storage, so you can compare runs over time.
+- Defend every crop on your farm from the emu swarm.
+- Manage money, crops, and defenses across each day.
+- Enter hunting and raid mini-games to earn rewards.
+- Answer the daily quiz to unlock helpful bonuses.
+- Track your best runs with the built-in leaderboard.
+
+## How To Play
+
+- Start a new run from the main menu.
+- Protect the farm, expand your defenses, and survive each day.
+- Use mini-games and rewards to stay one step ahead of the emus.
 
 ## Requirements
 
 - Node.js
 - npm
 
-## Setup
+## Run Locally
 
-1. Clone the repository.
-2. Open the project directory in your terminal.
-3. Install the dependencies:
+Install the dependencies:
 
 ```bash
 npm install
 ```
-
-## Run Locally
 
 Start the development server:
 
@@ -81,7 +88,3 @@ npm run test:ui
 - TypeScript
 - Vite
 - Konva
-
-## Notes
-
-- If the game does not load correctly, make sure dependencies are installed and restart the dev server.
