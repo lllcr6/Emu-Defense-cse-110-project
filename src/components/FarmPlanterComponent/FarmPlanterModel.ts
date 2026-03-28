@@ -19,6 +19,7 @@ export class FarmPlanterModel {
 		if (this.stage > -1) {
 			return false; // Can only plant in empty slots
 		}
+		this.health = 100;
 		this.stage = 0;
 		return true;
 	}

@@ -26,11 +26,12 @@ export class FarmEmuController {
 
 	constructor(group: Konva.Group, startX: number, startY: number, onKill: () => void) {
 		this.model = new FarmEmuModel(() => onKill());
-		this.view = new FarmEmuView(group, startX, startY, () => this.model.decrementHealth(10));
+		this.view = new FarmEmuView(group, startX, startY, () => this.handleClickDamage());
 		this.id = FarmEmuController.nextId++;
 		const randomDir = [[0, 1], [1, 0], [1, 1]][Math.floor(Math.random() * 3)] as [number, number];
 		this.randomMove = [randomDir[0] * (Math.random() < 0.5 ? -1 : 1), randomDir[1] * (Math.random() < 0.5 ? -1 : 1)];
 		this.active = true;
+		this.view.updateHealth(this.model.getHealth(), this.model.getMaxHealth());
 
 		requestAnimationFrame(this.gameLoop);
 	}
@@ -117,6 +118,7 @@ export class FarmEmuController {
 	}
 
 	remove(): void {
+		this.active = false;
 		this.view.removeFromGroup();
 	}
 
@@ -129,7 +131,16 @@ export class FarmEmuController {
 	}
 
 	reduceHealth(amount: number): void {
-    	this.model.decrementHealth(amount);
+		this.model.decrementHealth(amount);
+		this.view.updateHealth(this.model.getHealth(), this.model.getMaxHealth());
+	}
+
+	getHealth(): number {
+		return this.model.getHealth();
+	}
+
+	getMaxHealth(): number {
+		return this.model.getMaxHealth();
 	}
 
 	getDamage(): number {
@@ -150,5 +161,14 @@ export class FarmEmuController {
 
 	isBlockedByDefense(): boolean {
 		return this.isBlocked;
+	}
+
+	private handleClickDamage(): void {
+		if (!this.active) {
+			return;
+		}
+		this.view.showBloodSplatter();
+		this.model.decrementHealth(10);
+		this.view.updateHealth(this.model.getHealth(), this.model.getMaxHealth());
 	}
 }

@@ -49,6 +49,15 @@ export class FarmPlanterController {
 		this.view.setStage(this.model.getStage());
 	}
 
+	plantForNewGame(): boolean {
+		if (!this.model.plant()) {
+			return false;
+		}
+		this.view.setStage(this.model.getStage());
+		this.plantHandler?.();
+		return true;
+	}
+
 	getView(): Konva.Rect | null {
 		return this.view.getView();
 	}

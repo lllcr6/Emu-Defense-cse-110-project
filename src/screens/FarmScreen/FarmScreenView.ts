@@ -57,6 +57,13 @@ export class FarmScreenView implements View {
 	private timerText: Konva.Text;
 	private roundText: Konva.Text;
 	private mineInstructionText: Konva.Text;
+	private hudTooltipGroup: Konva.Group;
+	private hudTooltipBackground: Konva.Rect;
+	private hudTooltipText: Konva.Text;
+	private startRoundGroup: Konva.Group;
+	private startDayBackground: Konva.Rect;
+	private startDayButton: Konva.Image;
+	private startRoundButtonEnabled: boolean = false;
 	private mouseX: number = 0;
 	private mouseY: number = 0;
 	private placementHintDefault = "Press M to place a mine. Select a defense and press T to place it.";
@@ -185,6 +192,30 @@ export class FarmScreenView implements View {
 		});
 		this.hudGroup.add(this.mineInstructionText);
 
+		this.hudTooltipGroup = new Konva.Group({ visible: false, listening: false });
+		this.hudTooltipBackground = new Konva.Rect({
+			x: 0,
+			y: 0,
+			width: 10,
+			height: 10,
+			fill: "rgba(20, 20, 20, 0.92)",
+			cornerRadius: 6,
+			stroke: "#d0d0d0",
+			strokeWidth: 1,
+		});
+		this.hudTooltipText = new Konva.Text({
+			x: 0,
+			y: 0,
+			text: "",
+			fontSize: 12,
+			fontFamily: "Arial",
+			fill: "white",
+			padding: 8,
+		});
+		this.hudTooltipGroup.add(this.hudTooltipBackground);
+		this.hudTooltipGroup.add(this.hudTooltipText);
+		this.hudGroup.add(this.hudTooltipGroup);
+
 		// Three buttons on right side (exact layout from market-options)
 		
 		// 1. Pause button (grey)
@@ -209,13 +240,14 @@ export class FarmScreenView implements View {
 		// Attach event to the GROUP so background doesn't block clicks
 		pauseGroup.on("mouseup", () => this.menuButtonHandler?.());
 		pauseGroup.on("click", () => this.menuButtonHandler?.());
+		this.attachHudTooltip(pauseGroup, "Pause and open the menu");
 		pauseGroup.add(pauseBackground);
 		pauseGroup.add(pauseButton);
 		this.hudGroup.add(pauseGroup);
 
 		// 2. Start Day button (green)
-		const startDayGroup = new Konva.Group({ cursor: "pointer", listening: true });
-		const startDayBackground = new Konva.Rect({
+		this.startRoundGroup = new Konva.Group({ cursor: "pointer", listening: true });
+		this.startDayBackground = new Konva.Rect({
 			x: STAGE_WIDTH - 120,
 			y: 20,
 			width: 40,
@@ -224,7 +256,7 @@ export class FarmScreenView implements View {
 			cornerRadius: 8,
 			listening: true,
 		});
-		const startDayButton = new Konva.Image({
+		this.startDayButton = new Konva.Image({
 			x: STAGE_WIDTH - 115,
 			y: 25,
 			width: 30,
@@ -233,12 +265,17 @@ export class FarmScreenView implements View {
 			listening: true,
 		});
 		// Attach event to the GROUP so background doesn't block clicks
-		startDayGroup.on("click", () => {
+		this.startRoundGroup.on("click", () => {
+			if (!this.startRoundButtonEnabled) {
+				return;
+			}
 			this.startRoundHandler?.();
 		});
-		startDayGroup.add(startDayBackground);
-		startDayGroup.add(startDayButton);
-		this.hudGroup.add(startDayGroup);
+		this.attachHudTooltip(this.startRoundGroup, "Start this round after placing defenses");
+		this.startRoundGroup.add(this.startDayBackground);
+		this.startRoundGroup.add(this.startDayButton);
+		this.hudGroup.add(this.startRoundGroup);
+		this.setStartRoundButtonEnabled(false);
 
 		// 3. End Game button (red) - RIGHTMOST button
 		const endGameGroup = new Konva.Group({ cursor: "pointer", listening: true });
@@ -262,6 +299,7 @@ export class FarmScreenView implements View {
 		// Attach event to the GROUP so background doesn't block clicks
 		endGameGroup.on("mouseup", handleEndGame);
 		endGameGroup.on("click", handleEndGame);
+		this.attachHudTooltip(endGameGroup, "End the run and go to the results screen");
 		endGameGroup.add(endGameBackground);
 		endGameGroup.add(endGameButton);
 		this.hudGroup.add(endGameGroup);
@@ -698,6 +736,44 @@ export class FarmScreenView implements View {
 	setPlanningPhaseMode(enabled: boolean): void {
 		// Enable/disable defense placement clicks
 		this.defensesLayer.listening(enabled);
+	}
+
+	setStartRoundButtonEnabled(enabled: boolean): void {
+		this.startRoundButtonEnabled = enabled;
+		this.startRoundGroup.listening(true);
+		this.startRoundGroup.opacity(enabled ? 1 : 0.35);
+		this.startDayBackground.fill(enabled ? "green" : "#5f6a6a");
+		this.startDayBackground.listening(true);
+		this.startDayButton.listening(true);
+		this.group.getLayer()?.draw();
+	}
+
+	private attachHudTooltip(target: Konva.Group, message: string): void {
+		target.on("mouseenter", () => this.showHudTooltip(target, message));
+		target.on("mouseleave", () => this.hideHudTooltip());
+	}
+
+	private showHudTooltip(target: Konva.Group, message: string): void {
+		const bounds = target.getClientRect({ relativeTo: this.hudGroup });
+		this.hudTooltipText.text(message);
+		this.hudTooltipBackground.width(this.hudTooltipText.width());
+		this.hudTooltipBackground.height(this.hudTooltipText.height());
+
+		const tooltipX = Math.max(8, Math.min(bounds.x + bounds.width / 2 - this.hudTooltipBackground.width() / 2, STAGE_WIDTH - this.hudTooltipBackground.width() - 8));
+		const tooltipY = Math.max(8, bounds.y + bounds.height + 8);
+
+		this.hudTooltipGroup.position({ x: tooltipX, y: tooltipY });
+		this.hudTooltipGroup.visible(true);
+		this.hudTooltipGroup.moveToTop();
+		this.hudGroup.getLayer()?.draw();
+	}
+
+	private hideHudTooltip(): void {
+		if (!this.hudTooltipGroup.visible()) {
+			return;
+		}
+		this.hudTooltipGroup.visible(false);
+		this.hudGroup.getLayer()?.draw();
 	}
 
 	addDefense(defenseGroup: Konva.Group): void {

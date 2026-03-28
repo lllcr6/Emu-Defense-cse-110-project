@@ -52,6 +52,8 @@ export class FarmScreenController extends ScreenController {
 	private readonly planningHint = "Select a defense, then press T to place it at the cursor.";
 
 	private activeMines: ActiveMine[] = [];
+	private gunCooldowns = new Map<DefenseController, number>();
+	private skipNextGrowthAdvance: boolean = false;
 
 	// private squeezeSound: HTMLAudioElement;
 
@@ -111,6 +113,7 @@ export class FarmScreenController extends ScreenController {
 		this.checkMineCollisions();
 		this.checkEmuCropCollisions(deltaTime);
 		this.checkDefenseEmuInteractions(deltaTime);
+		this.checkForCropLoss();
 		this.assignTargetsToAllEmus();
 
 		if (this.lastTickTime == null){
@@ -131,12 +134,14 @@ export class FarmScreenController extends ScreenController {
 			this.model.reset();
 			this.timeRemaining = GAME_DURATION;
 			this.defenses = [];
+			this.gunCooldowns.clear();
 			this.view.clearDefenses();
 			this.emus = [];
 			this.view.clearEmus();
 			this.selectedDefenseType = null;
 			this.isPlanningPhase = false;
 			this.isDefensePlacementMode = false;
+			this.skipNextGrowthAdvance = true;
 
 			// Reset all planters to empty state
 			this.planters.forEach((planter) => {
@@ -144,6 +149,9 @@ export class FarmScreenController extends ScreenController {
 				if (!planter.isEmpty()) {
 					planter.destroyCrop();
 				}
+			});
+			this.planters.forEach((planter) => {
+				planter.plantForNewGame();
 			});
 		}
 		// Update view
@@ -161,7 +169,11 @@ export class FarmScreenController extends ScreenController {
 
 	private prepareFirstRound(): void {
 		// After morning screen closes, prepare for round 1
-		this.planters.forEach((planter) => planter.advanceDay());
+		if (this.skipNextGrowthAdvance) {
+			this.skipNextGrowthAdvance = false;
+		} else {
+			this.planters.forEach((planter) => planter.advanceDay());
+		}
 		this.model.updateSpawn();
 		this.resetMines();
 		this.updateCropDisplay();
@@ -175,6 +187,7 @@ export class FarmScreenController extends ScreenController {
 		this.isDefensePlacementMode = false;
 		this.stopTimer();
 		this.view.setPlanningPhaseMode(true);
+		this.view.setStartRoundButtonEnabled(false);
 		this.view.setPlacementCursor(false);
 		this.view.setPlacementHint(this.planningHint);
 		if (this.planningPhase) {
@@ -190,6 +203,7 @@ export class FarmScreenController extends ScreenController {
 		this.isPlanningPhase = false;
 		this.isDefensePlacementMode = true;
 		this.view.setPlanningPhaseMode(false);
+		this.view.setStartRoundButtonEnabled(true);
 		if (this.planningPhase) {
 			this.planningPhase.hide();
 		}
@@ -319,6 +333,7 @@ export class FarmScreenController extends ScreenController {
 	startRound(): void {
 		this.isDefensePlacementMode = false;
 		this.selectedDefenseType = null;
+		this.view.setStartRoundButtonEnabled(false);
 		this.view.setPlacementCursor(false);
 		this.view.setPlacementHint();
 		this.view.updateScore(this.status.getFinalScore());
@@ -385,7 +400,7 @@ export class FarmScreenController extends ScreenController {
 	/**
 	 * End the game
 	 */
-    private endRound(): void {
+	private endRound(): void {
         this.stopTimer();
         this.view.clearEmus();
         this.status.endDay();
@@ -419,6 +434,7 @@ export class FarmScreenController extends ScreenController {
 				emu.remove();
 			}
 		}
+		this.emuTargets.clear();
 	}
 
 	private registerPlanter(planter: FarmPlanterController): void {
@@ -442,6 +458,20 @@ export class FarmScreenController extends ScreenController {
 		return this.planters.filter(p => !p.isEmpty());
 	}
 
+	private hasActiveRound(): boolean {
+		return this.gameTimer !== null && !this.isPlanningPhase && !this.isDefensePlacementMode;
+	}
+
+	private checkForCropLoss(): void {
+		if (!this.hasActiveRound()) {
+			return;
+		}
+
+		if (!this.getPlantersWithCrop().length) {
+			this.endGame();
+		}
+	}
+
 	private assignTargetToEmu(emu: FarmEmuController): void {
 		const candidates = this.getPlantersWithCrop();
 		if (!candidates.length) {
@@ -462,6 +492,9 @@ export class FarmScreenController extends ScreenController {
 	private assignTargetsToAllEmus(): void {
 		const candidates = this.getPlantersWithCrop();
 		if (!candidates.length) {
+			if (this.hasActiveRound()) {
+				this.endGame();
+			}
 			for (const emu of this.emus){
 				this.emuTargets.set(emu, null);
 			}
@@ -470,7 +503,7 @@ export class FarmScreenController extends ScreenController {
 
 		for (const emu of this.emus) {
 			if (emu.hasTarget()) {
-				return;
+				continue;
 			}
 
 			const planter = candidates[Math.floor(Math.random() * candidates.length)];
@@ -720,7 +753,6 @@ export class FarmScreenController extends ScreenController {
 
 		const activeDefenses: DefenseController[] = [];
 		const emusToRemove: FarmEmuController[] = [];
-		const gunCooldowns = new Map<DefenseController, number>();
 
 		for (const defense of this.defenses) {
 			if (!defense.isActive()) continue;
@@ -735,7 +767,7 @@ export class FarmScreenController extends ScreenController {
 			const defenseType = defense.getType();
 
 			if (defenseType === "machine_gun") {
-				const lastShot = gunCooldowns.get(defense) || 0;
+				const lastShot = this.gunCooldowns.get(defense) || 0;
 				if (lastShot <= 0) {
 					let closestEmu: FarmEmuController | null = null;
 					let closestDist = 100;
@@ -755,16 +787,25 @@ export class FarmScreenController extends ScreenController {
 					}
 
 					if (closestEmu && closestDist <= 100) {
+						const emuShape = closestEmu.getView();
+						if (emuShape) {
+							defense.showAttackEffect(
+								emuShape.x() + emuShape.width() / 2,
+								emuShape.y() + emuShape.height() / 2
+							);
+							closestEmu.reduceHealth(closestEmu.getMaxHealth());
+						}
 						closestEmu.remove();
 						emusToRemove.push(closestEmu);
 						defense.takeDamage(1);
-						gunCooldowns.set(defense, 0.5);
+						this.gunCooldowns.set(defense, 0.5);
 						if (!defense.isActive()) {
 							defense.remove();
+							this.gunCooldowns.delete(defense);
 						}
 					}
 				} else {
-					gunCooldowns.set(defense, Math.max(0, lastShot - deltaTime));
+					this.gunCooldowns.set(defense, Math.max(0, lastShot - deltaTime));
 				}
 				continue;
 			}
@@ -803,6 +844,11 @@ export class FarmScreenController extends ScreenController {
 		}
 
 		this.defenses = activeDefenses.filter(d => d.isActive());
+		for (const defense of Array.from(this.gunCooldowns.keys())) {
+			if (!this.defenses.includes(defense)) {
+				this.gunCooldowns.delete(defense);
+			}
+		}
 	}
 
 	private resetMines(): void {
@@ -857,7 +903,9 @@ export class FarmScreenController extends ScreenController {
 	 * Should be called in game loop
 	 */
 	endGame(): void {
+		this.stopTimer();
         this.view.clearEmus();
+		this.emuTargets.clear();
 		this.screenSwitcher.switchToScreen({ 
 			type: "game_over", 
 			survivalDays: this.status.getDay(),
