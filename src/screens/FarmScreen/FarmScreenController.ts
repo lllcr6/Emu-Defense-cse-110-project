@@ -76,7 +76,7 @@ export class FarmScreenController extends ScreenController {
 			() => this.handleMenuSaveAndExit(),
 			() => this.handleMenuResume(),
 		);
-		this.view.setStartRoundHandler(() => this.startRound());
+		this.view.setStartRoundHandler(() => this.handleRoundActionButton());
 
 		// Initialize planning phase
 		this.planningPhase = new PlanningPhaseController();
@@ -115,6 +115,7 @@ export class FarmScreenController extends ScreenController {
 		this.checkDefenseEmuInteractions(deltaTime);
 		this.checkForCropLoss();
 		this.assignTargetsToAllEmus();
+		this.updateRoundActionButtonState();
 
 		if (this.lastTickTime == null){
 			this.lastTickTime = timestamp;
@@ -187,9 +188,9 @@ export class FarmScreenController extends ScreenController {
 		this.isDefensePlacementMode = false;
 		this.stopTimer();
 		this.view.setPlanningPhaseMode(true);
-		this.view.setStartRoundButtonEnabled(false);
 		this.view.setPlacementCursor(false);
 		this.view.setPlacementHint(this.planningHint);
+		this.updateRoundActionButtonState();
 		if (this.planningPhase) {
 			this.updatePlanningInventoryDisplay();
 			this.planningPhase.clearSelection();
@@ -203,7 +204,7 @@ export class FarmScreenController extends ScreenController {
 		this.isPlanningPhase = false;
 		this.isDefensePlacementMode = true;
 		this.view.setPlanningPhaseMode(false);
-		this.view.setStartRoundButtonEnabled(true);
+		this.updateRoundActionButtonState();
 		if (this.planningPhase) {
 			this.planningPhase.hide();
 		}
@@ -333,7 +334,6 @@ export class FarmScreenController extends ScreenController {
 	startRound(): void {
 		this.isDefensePlacementMode = false;
 		this.selectedDefenseType = null;
-		this.view.setStartRoundButtonEnabled(false);
 		this.view.setPlacementCursor(false);
 		this.view.setPlacementHint();
 		this.view.updateScore(this.status.getFinalScore());
@@ -346,6 +346,18 @@ export class FarmScreenController extends ScreenController {
 
 		this.spawnEmusForCurrentRound();
 		this.startTimer();
+		this.updateRoundActionButtonState();
+	}
+
+	private handleRoundActionButton(): void {
+		if (this.isDefensePlacementMode) {
+			this.startRound();
+			return;
+		}
+
+		if (this.hasActiveRound() && this.getActiveEmuCount() === 0) {
+			this.endRound();
+		}
 	}
 
 	/**
@@ -408,6 +420,7 @@ export class FarmScreenController extends ScreenController {
 		this.view.updateScore(this.status.getFinalScore());
         const newDay = this.status.getDay();
         this.morning?.setDisplayDayOverride(newDay);
+		this.updateRoundActionButtonState();
         this.handleOpenMarket(() => this.prepareNextRound());
     }
 
@@ -456,6 +469,10 @@ export class FarmScreenController extends ScreenController {
 
 	private getPlantersWithCrop(): FarmPlanterController[] {
 		return this.planters.filter(p => !p.isEmpty());
+	}
+
+	private getActiveEmuCount(): number {
+		return this.emus.filter((emu) => emu.isActive()).length;
 	}
 
 	private hasActiveRound(): boolean {
@@ -856,6 +873,29 @@ export class FarmScreenController extends ScreenController {
 		this.view.clearMines();
 	}
 
+	private updateRoundActionButtonState(): void {
+		if (this.isPlanningPhase) {
+			this.view.setStartRoundButtonEnabled(false);
+			this.view.setStartRoundTooltip("Open defense placement to start the round");
+			return;
+		}
+
+		if (this.isDefensePlacementMode) {
+			this.view.setStartRoundButtonEnabled(true);
+			this.view.setStartRoundTooltip("Start this round after placing defenses");
+			return;
+		}
+
+		if (this.hasActiveRound() && this.getActiveEmuCount() === 0) {
+			this.view.setStartRoundButtonEnabled(true);
+			this.view.setStartRoundTooltip("All emus defeated. Click to skip to the next phase");
+			return;
+		}
+
+		this.view.setStartRoundButtonEnabled(false);
+		this.view.setStartRoundTooltip("Defeat all emus to skip the remaining timer");
+	}
+
 	private formatDefenseName(type: DefenseType): string {
 		return type.replace("_", " ").replace(/\b\w/g, (char) => char.toUpperCase());
 	}
@@ -906,6 +946,7 @@ export class FarmScreenController extends ScreenController {
 		this.stopTimer();
         this.view.clearEmus();
 		this.emuTargets.clear();
+		this.updateRoundActionButtonState();
 		this.screenSwitcher.switchToScreen({ 
 			type: "game_over", 
 			survivalDays: this.status.getDay(),

@@ -66,7 +66,7 @@ export class DefenseView {
 				x: -10,
 				y: -24,
 				width: 50,
-				text: "10/10",
+				text: "50/50",
 				fontSize: 10,
 				fontFamily: "Arial",
 				fill: "#fff7db",

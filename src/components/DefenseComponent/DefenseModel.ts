@@ -25,8 +25,8 @@ export const DEFENSE_CONFIGS: Record<DefenseType, DefenseConfig> = {
 	},
 	machine_gun: {
 		cost: 50,
-		durability: 10, // Limited ammo
-		maxDurability: 10,
+		durability: 50, // Limited ammo
+		maxDurability: 50,
 		effectiveness: 0.7, // Auto-shoots nearby emus
 	},
 	mine: {
@@ -91,4 +91,3 @@ export class DefenseModel {
 		return DEFENSE_CONFIGS[this.type];
 	}
 }
-

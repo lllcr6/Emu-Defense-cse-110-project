@@ -64,6 +64,7 @@ export class FarmScreenView implements View {
 	private startDayBackground: Konva.Rect;
 	private startDayButton: Konva.Image;
 	private startRoundButtonEnabled: boolean = false;
+	private startRoundTooltipMessage = "Start this round after placing defenses";
 	private mouseX: number = 0;
 	private mouseY: number = 0;
 	private placementHintDefault = "Press M to place a mine. Select a defense and press T to place it.";
@@ -271,7 +272,8 @@ export class FarmScreenView implements View {
 			}
 			this.startRoundHandler?.();
 		});
-		this.attachHudTooltip(this.startRoundGroup, "Start this round after placing defenses");
+		this.startRoundGroup.on("mouseenter", () => this.showHudTooltip(this.startRoundGroup, this.startRoundTooltipMessage));
+		this.startRoundGroup.on("mouseleave", () => this.hideHudTooltip());
 		this.startRoundGroup.add(this.startDayBackground);
 		this.startRoundGroup.add(this.startDayButton);
 		this.hudGroup.add(this.startRoundGroup);
@@ -746,6 +748,10 @@ export class FarmScreenView implements View {
 		this.startDayBackground.listening(true);
 		this.startDayButton.listening(true);
 		this.group.getLayer()?.draw();
+	}
+
+	setStartRoundTooltip(message: string): void {
+		this.startRoundTooltipMessage = message;
 	}
 
 	private attachHudTooltip(target: Konva.Group, message: string): void {
