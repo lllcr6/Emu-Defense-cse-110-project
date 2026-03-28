@@ -144,10 +144,10 @@ export class MorningEventsScreenView implements View {
         this.group.add(stallBackdrop);
 
         this.headerPanel = new Konva.Rect({
-            x: STAGE_WIDTH / 2 - 250,
-            y: 42,
-            width: 500,
-            height: 180,
+            x: STAGE_WIDTH / 2 - 310,
+            y: 30,
+            width: 620,
+            height: 620,
             fill: "rgba(255, 248, 238, 0.78)",
             stroke: "#8d6e63",
             strokeWidth: 3,
@@ -161,9 +161,9 @@ export class MorningEventsScreenView implements View {
         // Title
         this.titleText = new Konva.Text({
             x: STAGE_WIDTH / 2,
-            y: 64,
+            y: 72,
             text: "Morning Events",
-            fontSize: 34,
+            fontSize: 36,
             fontFamily: "Arial",
             fill: "#3e2723",
             align: "center",
@@ -175,75 +175,36 @@ export class MorningEventsScreenView implements View {
         // Money / Inventory
         this.moneyText = new Konva.Text({
             x: STAGE_WIDTH / 2,
-            y: 112,
+            y: 132,
             text: "Money: $0",
-            fontSize: 24,
+            fontSize: 26,
             fontFamily: "Arial",
             fill: "#2e7d32",
             align: "center",
             fontStyle: "bold",
+            visible: false,
         });
         this.moneyText.offsetX(this.moneyText.width() / 2);
         this.group.add(this.moneyText);
 
         this.inventoryText = new Konva.Text({
             x: STAGE_WIDTH / 2,
-            y: 148,
+            y: 170,
             text: "Crops: 0",
-            fontSize: 20,
+            fontSize: 22,
             fontFamily: "Arial",
             fill: "#455a64",
             align: "center",
+            visible: false,
         });
         this.inventoryText.offsetX(this.inventoryText.width() / 2);
         this.group.add(this.inventoryText);
 
-        const marketPanel = new Konva.Rect({
-            x: STAGE_WIDTH / 2 - 235,
-            y: 270,
-            width: 470,
-            height: 220,
-            fill: "rgba(255, 248, 232, 0.9)",
-            stroke: "#8d6e63",
-            strokeWidth: 3,
-            cornerRadius: 18,
-            shadowColor: "rgba(0, 0, 0, 0.18)",
-            shadowBlur: 10,
-            shadowOffset: { x: 0, y: 4 },
-        });
-        this.group.add(marketPanel);
-
-        const marketTitle = new Konva.Text({
-            x: STAGE_WIDTH / 2,
-            y: 292,
-            text: "Market Square",
-            fontSize: 24,
-            fontFamily: "Arial",
-            fill: "#4e342e",
-            fontStyle: "bold",
-            align: "center",
-        });
-        marketTitle.offsetX(marketTitle.width() / 2);
-        this.group.add(marketTitle);
-
-        const marketSubtitle = new Konva.Text({
-            x: STAGE_WIDTH / 2,
-            y: 324,
-            width: 360,
-            text: "Buy crops, sell goods, and stock up on defenses from one place.",
-            fontSize: 15,
-            fontFamily: "Arial",
-            fill: "#6d4c41",
-            align: "center",
-        });
-        marketSubtitle.offsetX(marketSubtitle.width() / 2);
-        this.group.add(marketSubtitle);
-
-        const shopBtn = makeButton({ x: STAGE_WIDTH / 2 - 100, y: 368, width: 200, height: 50, text: "Open Shop", fill: "#d97706" }, () => onOpenShop?.());
-        const quizBtn = makeButton({ x: STAGE_WIDTH / 2 - 100, y: 425, width: 200, height: 44, text: "Daily Quiz", fill: "#8e24aa" }, () => onOpenQuiz?.());
+        const shopBtn = makeButton({ x: STAGE_WIDTH / 2 - 120, y: 360, width: 240, height: 58, text: "Open Shop", fill: "#d97706" }, () => onOpenShop?.());
+        const quizBtn = makeButton({ x: STAGE_WIDTH / 2 - 120, y: 434, width: 240, height: 52, text: "Daily Quiz", fill: "#8e24aa" }, () => onOpenQuiz?.());
         quizBtn.visible(false);
         this.dailyQuizButton = quizBtn;
-        this.continueButton = makeButton({ x: STAGE_WIDTH / 2 - 100, y: 425, width: 200, height: 50, text: "Continue", fill: "#1565c0" }, onContinue);
+        this.continueButton = makeButton({ x: STAGE_WIDTH / 2 - 120, y: 434, width: 240, height: 58, text: "Continue", fill: "#1565c0" }, onContinue);
         this.group.add(shopBtn);
         this.group.add(quizBtn);
         this.group.add(this.continueButton);
@@ -251,13 +212,15 @@ export class MorningEventsScreenView implements View {
         // Informational text area (facts, quiz result, etc.)
         this.infoText = new Konva.Text({
             x: STAGE_WIDTH / 2,
-            y: 182,
+            y: 180,
             text: "",
-            fontSize: 16,
-            fontFamily: "Arial",
-            fill: "#4e342e",
+            fontSize: 20,
+            fontFamily: "Georgia",
+            fontStyle: "italic",
+            fill: "#3f2a24",
             align: "center",
-            width: 430,
+            width: 600,
+            lineHeight: 1.25,
         });
         this.infoText.offsetX(this.infoText.width() / 2);
         this.group.add(this.infoText);
@@ -291,7 +254,7 @@ export class MorningEventsScreenView implements View {
 
     setDailyQuizButtonVisible(visible: boolean): void {
         this.dailyQuizButton.visible(visible);
-        this.setButtonPosition(this.continueButton, STAGE_WIDTH / 2 - 100, visible ? 472 : 425);
+        this.setButtonPosition(this.continueButton, STAGE_WIDTH / 2 - 120, visible ? 508 : 434);
         this.group.getLayer()?.draw();
     }
 
