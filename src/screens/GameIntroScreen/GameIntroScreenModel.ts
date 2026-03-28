@@ -8,7 +8,7 @@ export class GameIntroModel {
     "THE EMUS FIGHT BACK\n\n\nThe emus proved to be surprisingly effective opponents!\n\nThey could run at 30 mph, scattered when shot at, and worked in groups. The soldiers found them nearly impossible to hit.",
     "AN EMBARRASSING DEFEAT\n\n\nAfter weeks of failed attempts, the military withdrew.\n\nThe emus had won! This became known as 'The Great Emu War', one of the few wars Australia officially lost.",
     "YOUR MISSION\n\n\nNow it's your turn to defend your farm!\n\nGrow crops, protect them from emu raids, and survive where the military failed.\n\nCan you succeed where history did not?",
-    "CONTROLS & HOW TO PLAY\n\n\nMove around your farm using WASD keys.\n\nPlant crops, harvest them, and manage your resources.\n\nProtect your farm from emu raids and grow your wheat empire!\n\n\nPress SPACEBAR to continue..."
+    "CONTROLS & HOW TO PLAY\n\n\nMove around your farm using WASD keys.\n\nPlant crops, harvest them, and manage your resources.\n\nProtect your farm from emu raids and grow your wheat empire!"
   ];
 
   getPage(index: number): string {
