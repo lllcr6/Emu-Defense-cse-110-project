@@ -51,10 +51,12 @@ export class FarmScreenController extends ScreenController {
 	private isGameOver: boolean = false;
 	private selectedDefenseType: DefenseType | null = null;
 	private readonly planningHint = "Select a defense, then press T to place it at the cursor.";
+	private readonly replantHint = "Plant at least one crop to continue the round.";
 
 	private activeMines: ActiveMine[] = [];
 	private gunCooldowns = new Map<DefenseController, number>();
 	private skipNextGrowthAdvance: boolean = false;
+	private isWaitingForReplant: boolean = false;
 
 	// private squeezeSound: HTMLAudioElement;
 
@@ -115,6 +117,12 @@ export class FarmScreenController extends ScreenController {
 		const deltaTime: number = (timestamp - this.lastTickTime) * 0.001;
 		this.lastTickTime = timestamp;
 
+		if (this.isWaitingForReplant) {
+			this.updateRoundActionButtonState();
+			requestAnimationFrame(this.gameLoop);
+			return;
+		}
+
 		this.checkMineCollisions();
 		this.checkEmuCropCollisions(deltaTime);
 		this.checkDefenseEmuInteractions(deltaTime);
@@ -139,7 +147,7 @@ export class FarmScreenController extends ScreenController {
 	/**
 	 * Start the game
 	 */
-	startGame(newgame: boolean): void {	
+	startGame(newgame: boolean, returnFromMinigame: boolean = false): void {	
 		const wasGameOver = this.isGameOver;
 		this.isGameOver = false;
 		if (wasGameOver) {
@@ -159,6 +167,7 @@ export class FarmScreenController extends ScreenController {
 			this.isPlanningPhase = false;
 			this.isDefensePlacementMode = false;
 			this.skipNextGrowthAdvance = true;
+			this.isWaitingForReplant = false;
 
 			// Reset all planters to empty state
 			this.planters.forEach((planter) => {
@@ -179,6 +188,17 @@ export class FarmScreenController extends ScreenController {
 		this.updateCropDisplay();
 		this.view.show();
 		this.view.setPlacementHint();
+
+		if (returnFromMinigame) {
+			this.view.hideHuntMenuOverlay();
+			this.view.hideEggMenuOverlay();
+			this.view.hideMenuOverlay();
+			this.syncHudForUpcomingRound();
+			if (this.isPlanningPhase || this.isDefensePlacementMode) {
+				this.updateRoundActionButtonState();
+			}
+			return;
+		}
 
 		// Show morning screen first, then planning phase
 		this.handleOpenMarket(() => this.prepareFirstRound());
@@ -358,9 +378,11 @@ export class FarmScreenController extends ScreenController {
 			this.ensureGameLoopRunning();
 		}
 		this.isDefensePlacementMode = false;
+		this.isWaitingForReplant = false;
 		this.selectedDefenseType = null;
 		this.view.setPlacementCursor(false);
 		this.view.setPlacementHint();
+		this.view.hideReplantOverlay();
 		this.planningPhase?.hide();
 		this.view.updateScore(this.status.getFinalScore());
 		this.updateCropDisplay();
@@ -440,6 +462,9 @@ export class FarmScreenController extends ScreenController {
 	 */
 	private endRound(): void {
         this.stopTimer();
+		this.isWaitingForReplant = false;
+		this.setEmusPaused(false);
+		this.view.hideReplantOverlay();
         this.view.clearEmus();
         this.status.endDay();
 		this.status.incrementScore(10);
@@ -500,10 +525,18 @@ export class FarmScreenController extends ScreenController {
 			this.audio.playSfx("harvest");
 			this.updateCropDisplay();
 			this.clearTargetsForPlanter(planter);
+			if (this.hasActiveRound() && !this.getPlantersWithCrop().length) {
+				this.pauseRoundForReplant();
+				return;
+			}
 			this.assignTargetsToAllEmus();
 		});
 		planter.setOnPlant(() => {
 			this.updateCropDisplay();
+			if (this.isWaitingForReplant && this.getPlantersWithCrop().length) {
+				this.resumeRoundAfterReplant();
+				return;
+			}
 			this.assignTargetsToAllEmus();
 		});
 	}
@@ -523,7 +556,7 @@ export class FarmScreenController extends ScreenController {
 	}
 
 	private checkForCropLoss(): void {
-		if (!this.hasActiveRound()) {
+		if (!this.hasActiveRound() || this.isWaitingForReplant) {
 			return;
 		}
 
@@ -535,8 +568,6 @@ export class FarmScreenController extends ScreenController {
 	private assignTargetToEmu(emu: FarmEmuController): void {
 		const candidates = this.getPlantersWithCrop();
 		if (!candidates.length) {
-			// No crops left – game is over!!!!:
-			this.endGame();
 			emu.clearTarget();
 			this.emuTargets.set(emu, null);
 			return;
@@ -553,9 +584,6 @@ export class FarmScreenController extends ScreenController {
 	private assignTargetsToAllEmus(): void {
 		const candidates = this.getPlantersWithCrop();
 		if (!candidates.length) {
-			if (this.hasActiveRound()) {
-				this.endGame();
-			}
 			for (const emu of this.emus){
 				emu.clearTarget();
 				this.emuTargets.set(emu, null);
@@ -648,6 +676,11 @@ export class FarmScreenController extends ScreenController {
 					this.audio.playSfx("harvest");
 					this.updateCropDisplay();
 					this.numStillStanding--;
+					this.clearTargetsForPlanter(planter);
+					if (!this.getPlantersWithCrop().length) {
+						this.endGame();
+						return;
+					}
 					//Retarget all emus targeted on this crop to the next non-destroyed crop
 					for (const otherEmu of this.emus){
 						const target = this.emuTargets.get(otherEmu);
@@ -699,6 +732,10 @@ export class FarmScreenController extends ScreenController {
 
 	private handleMenuResume(): void {
 		this.view.hideMenuOverlay();
+		if (this.isWaitingForReplant) {
+			this.view.setPlacementHint(this.replantHint);
+			return;
+		}
 		if (this.timeRemaining <= 0) {
 			this.endRound();
 			return;
@@ -959,6 +996,12 @@ export class FarmScreenController extends ScreenController {
 	}
 
 	private updateRoundActionButtonState(): void {
+		if (this.isWaitingForReplant) {
+			this.view.setStartRoundButtonEnabled(false);
+			this.view.setStartRoundTooltip("Plant at least one crop before the round can continue");
+			return;
+		}
+
 		if (this.isPlanningPhase) {
 			this.view.setStartRoundButtonEnabled(false);
 			this.view.setStartRoundTooltip("Open defense placement to start the round");
@@ -1032,7 +1075,9 @@ export class FarmScreenController extends ScreenController {
 			return;
 		}
 		this.isGameOver = true;
+		this.isWaitingForReplant = false;
 		this.stopTimer();
+		this.view.hideReplantOverlay();
         this.view.clearEmus();
 		this.hidePlanningUi();
 		this.emuTargets.clear();
@@ -1053,6 +1098,41 @@ export class FarmScreenController extends ScreenController {
 		this.planningPhase?.setPlacementMode(false);
 		this.planningPhase?.clearSelection();
 		this.planningPhase?.hide();
+	}
+
+	private pauseRoundForReplant(): void {
+		if (this.isWaitingForReplant) {
+			return;
+		}
+		this.isWaitingForReplant = true;
+		this.stopTimer();
+		this.setEmusPaused(true);
+		this.view.setPlacementHint(this.replantHint);
+		this.view.showReplantOverlay("All crops harvested", "Plant at least one crop to continue the round.");
+		this.updateRoundActionButtonState();
+	}
+
+	private resumeRoundAfterReplant(): void {
+		if (!this.isWaitingForReplant) {
+			return;
+		}
+		this.isWaitingForReplant = false;
+		this.setEmusPaused(false);
+		this.view.setPlacementHint();
+		this.view.hideReplantOverlay();
+		this.assignTargetsToAllEmus();
+		this.startTimer();
+		this.updateRoundActionButtonState();
+	}
+
+	private setEmusPaused(paused: boolean): void {
+		for (const emu of this.emus) {
+			emu.setBlocked(paused);
+			if (paused) {
+				emu.clearTarget();
+				this.emuTargets.set(emu, null);
+			}
+		}
 	}
 }
 

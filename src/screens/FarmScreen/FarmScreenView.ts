@@ -39,6 +39,9 @@ export class FarmScreenView implements View {
 	private menuOverlay: Konva.Group;
 	private huntMenuOverlay: Konva.Group;
 	private eggMenuOverlay: Konva.Group;
+	private replantOverlay: Konva.Group;
+	private replantOverlayTitle: Konva.Text;
+	private replantOverlayMessage: Konva.Text;
 	private minesLayer: Konva.Group;
 	private defensesLayer: Konva.Group;
 	private mines: Konva.Image[] = [];
@@ -67,7 +70,7 @@ export class FarmScreenView implements View {
 	private startRoundTooltipMessage = "Start this round after placing defenses";
 	private mouseX: number = 0;
 	private mouseY: number = 0;
-	private placementHintDefault = "Press M to place a mine. Select a defense and press T to place it.";
+	private placementHintDefault = "Press M to place a mine. Select a defense item and press T to place it. Click emus to attack.";
 
 	constructor(
 		handleKeydown: (event: KeyboardEvent) => void,
@@ -427,6 +430,89 @@ export class FarmScreenView implements View {
 			() => this.eggSkipHandler?.()
 		);
 		this.group.add(this.eggMenuOverlay);
+		this.replantOverlay = new Konva.Group({ visible: false, listening: false });
+		const replantPanelWidth = 520;
+		const replantPanelHeight = 110;
+		const replantPanelX = (STAGE_WIDTH - replantPanelWidth) / 2;
+		const replantPanelY = STAGE_HEIGHT - replantPanelHeight - 24;
+		const replantShadow = new Konva.Rect({
+			x: replantPanelX + 6,
+			y: replantPanelY + 8,
+			width: replantPanelWidth,
+			height: replantPanelHeight,
+			fill: "rgba(45, 24, 16, 0.22)",
+			cornerRadius: 18,
+			listening: false,
+		});
+		const replantFrame = new Konva.Rect({
+			x: replantPanelX,
+			y: replantPanelY,
+			width: replantPanelWidth,
+			height: replantPanelHeight,
+			fill: "#6d4c41",
+			stroke: "#4e342e",
+			strokeWidth: 2,
+			cornerRadius: 18,
+			listening: false,
+		});
+		const replantPanel = new Konva.Rect({
+			x: replantPanelX + 10,
+			y: replantPanelY + 10,
+			width: replantPanelWidth - 20,
+			height: replantPanelHeight - 20,
+			fill: "rgba(235, 214, 157, 0.98)",
+			stroke: "#c49a52",
+			strokeWidth: 2,
+			cornerRadius: 14,
+			shadowColor: "black",
+			shadowBlur: 6,
+			shadowOpacity: 0.08,
+			shadowOffset: { x: 0, y: 2 },
+			listening: false,
+		});
+		const replantDivider = new Konva.Line({
+			points: [
+				replantPanelX + 42,
+				replantPanelY + 48,
+				replantPanelX + replantPanelWidth - 42,
+				replantPanelY + 48,
+			],
+			stroke: "#b9823b",
+			strokeWidth: 2,
+			opacity: 0.75,
+			listening: false,
+		});
+		this.replantOverlayTitle = new Konva.Text({
+			x: replantPanelX + 24,
+			y: replantPanelY + 13,
+			width: replantPanelWidth - 48,
+			text: "All crops harvested",
+			fontSize: 23,
+			fontFamily: "Georgia",
+			fontStyle: "bold",
+			fill: "#4a2c1d",
+			align: "center",
+			listening: false,
+		});
+		this.replantOverlayMessage = new Konva.Text({
+			x: replantPanelX + 32,
+			y: replantPanelY + 58,
+			width: replantPanelWidth - 64,
+			text: "Plant at least one crop to continue the round.",
+			fontSize: 17,
+			fontFamily: "Georgia",
+			fill: "#5d4037",
+			align: "center",
+			lineHeight: 1.35,
+			listening: false,
+		});
+		this.replantOverlay.add(replantShadow);
+		this.replantOverlay.add(replantFrame);
+		this.replantOverlay.add(replantPanel);
+		this.replantOverlay.add(replantDivider);
+		this.replantOverlay.add(this.replantOverlayTitle);
+		this.replantOverlay.add(this.replantOverlayMessage);
+		this.group.add(this.replantOverlay);
 
 		// Planters
 		for (let x = (STAGE_WIDTH / 8) + (PLANTER_WIDTH / 2); x < STAGE_WIDTH; x += (7 * STAGE_WIDTH) / 32 - PLANTER_WIDTH / 8) {
@@ -681,6 +767,19 @@ export class FarmScreenView implements View {
 
 	hideEggMenuOverlay(): void {
 		this.eggMenuOverlay.visible(false);
+		this.group.getLayer()?.draw();
+	}
+
+	showReplantOverlay(title: string, message: string): void {
+		this.replantOverlayTitle.text(title);
+		this.replantOverlayMessage.text(message);
+		this.replantOverlay.moveToTop();
+		this.replantOverlay.visible(true);
+		this.group.getLayer()?.draw();
+	}
+
+	hideReplantOverlay(): void {
+		this.replantOverlay.visible(false);
 		this.group.getLayer()?.draw();
 	}
 

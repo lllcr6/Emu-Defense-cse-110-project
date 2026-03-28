@@ -25,6 +25,8 @@ class FakeFarmScreenView {
   hideHuntMenuOverlay = vi.fn();
   showEggMenuOverlay = vi.fn();
   hideEggMenuOverlay = vi.fn();
+  showReplantOverlay = vi.fn();
+  hideReplantOverlay = vi.fn();
   removeMineSprite = vi.fn();
   setDefensePlaceClickHandler = vi.fn();
   setPlanningPhaseMode = vi.fn();
@@ -52,20 +54,31 @@ class FakeFarmScreenView {
     // This should be called if registerPlanter is a function
     if (typeof registerPlanter === 'function') {
       let harvestHandler: (() => void) | null = null;
+      let plantHandler: (() => void) | null = null;
+      let isEmpty = false;
       const planterTarget = {
         id: "planter",
-        triggerHarvest: () => harvestHandler?.(),
+        triggerHarvest: () => {
+          isEmpty = true;
+          harvestHandler?.();
+        },
+        triggerPlant: () => {
+          isEmpty = false;
+          plantHandler?.();
+        },
       };
       latestPlanter = planterTarget;
       const planter = {
         setOnHarvest: vi.fn((handler: () => void) => {
           harvestHandler = handler;
         }),
+        setOnPlant: vi.fn((handler: () => void) => {
+          plantHandler = handler;
+        }),
         advanceDay: vi.fn(),
         getView: vi.fn(() => planterTarget),
         setStatus: vi.fn(),
-        setOnPlant: vi.fn(),
-        isEmpty: vi.fn(() => false),
+        isEmpty: vi.fn(() => isEmpty),
         takeDamage: vi.fn(() => false),
         destroyCrop: vi.fn(),
       };
@@ -107,7 +120,7 @@ class FakeFarmScreenView {
 
 let latestView: FakeFarmScreenView | null = null;
 let latestPlanningPhase: any = null;
-let latestPlanter: { triggerHarvest: () => void } | null = null;
+let latestPlanter: { triggerHarvest: () => void; triggerPlant: () => void } | null = null;
 
 vi.mock("../src/screens/FarmScreen/FarmScreenView.ts", () => ({
   FarmScreenView: vi.fn((
@@ -213,6 +226,69 @@ describe("FarmScreenController", () => {
     expect(status.getItemCount(GameItem.Crop)).toBe(5);
   });
 
+  it("pauses the round instead of ending the game when the last crop is harvested", () => {
+    const { controller, switcher } = createController();
+    const emu = {
+      clearTarget: vi.fn(),
+      setBlocked: vi.fn(),
+      isActive: vi.fn(() => true),
+      remove: vi.fn(),
+    } as unknown as FarmEmuController;
+
+    (controller as any).registerEmu(emu);
+    (controller as any).isPlanningPhase = false;
+    (controller as any).isDefensePlacementMode = false;
+    (controller as any).gameTimer = 123;
+
+    latestPlanter!.triggerHarvest();
+
+    expect(switcher.switchToScreen).not.toHaveBeenCalled();
+    expect((controller as any).gameTimer).toBeNull();
+    expect((controller as any).isWaitingForReplant).toBe(true);
+    expect(emu.setBlocked).toHaveBeenCalledWith(true);
+    expect(emu.clearTarget).toHaveBeenCalled();
+    expect(latestView?.showReplantOverlay).toHaveBeenCalledWith(
+      "All crops harvested",
+      "Plant at least one crop to continue the round.",
+    );
+    expect(latestView?.setPlacementHint).toHaveBeenLastCalledWith(
+      "Plant at least one crop to continue the round.",
+    );
+  });
+
+  it("resumes emus and countdown after a new crop is planted during the replant pause", () => {
+    const { controller } = createController();
+    const emu = {
+      clearTarget: vi.fn(),
+      setBlocked: vi.fn(),
+      hasTarget: vi.fn(() => false),
+      setTarget: vi.fn(),
+      isActive: vi.fn(() => true),
+      remove: vi.fn(),
+    } as unknown as FarmEmuController;
+
+    const setIntervalSpy = vi.spyOn(globalThis, "setInterval").mockReturnValue(999 as unknown as ReturnType<typeof setInterval>);
+    const clearIntervalSpy = vi.spyOn(globalThis, "clearInterval").mockImplementation(() => undefined);
+
+    (controller as any).registerEmu(emu);
+    (controller as any).isPlanningPhase = false;
+    (controller as any).isDefensePlacementMode = false;
+    (controller as any).gameTimer = 123;
+
+    latestPlanter!.triggerHarvest();
+    latestPlanter!.triggerPlant();
+
+    expect((controller as any).isWaitingForReplant).toBe(false);
+    expect((controller as any).gameTimer).toBe(999);
+    expect(emu.setBlocked).toHaveBeenLastCalledWith(false);
+    expect(emu.setTarget).toHaveBeenCalled();
+    expect(latestView?.hideReplantOverlay).toHaveBeenCalled();
+    expect(latestView?.setPlacementHint).toHaveBeenLastCalledWith();
+
+    setIntervalSpy.mockRestore();
+    clearIntervalSpy.mockRestore();
+  });
+
   it("deploys a mine when handleDeployMine is called and player has mines", () => {
     const { controller, status } = createController();
     
@@ -269,6 +345,31 @@ describe("FarmScreenController", () => {
     (controller as any).showPlanningPhase();
 
     expect(latestView?.updateRound).toHaveBeenCalledWith(2);
+    expect(latestView?.updateTimer).toHaveBeenCalledWith(60);
+  });
+
+  it("does not advance crops or reopen the market when returning from a minigame", () => {
+    const { controller } = createController();
+    const morningStub = {
+      showOverlay: vi.fn(),
+      setDisplayDayOverride: vi.fn(),
+    } as unknown as MorningEventsScreenController;
+
+    controller.setMorningController(morningStub);
+    (controller as any).isPlanningPhase = true;
+
+    const planter = {
+      advanceDay: vi.fn(),
+    };
+    (controller as any).planters = [planter];
+
+    controller.startGame(false, true);
+
+    expect(morningStub.showOverlay).not.toHaveBeenCalled();
+    expect(planter.advanceDay).not.toHaveBeenCalled();
+    expect(latestView?.hideHuntMenuOverlay).toHaveBeenCalled();
+    expect(latestView?.hideEggMenuOverlay).toHaveBeenCalled();
+    expect(latestView?.updateRound).toHaveBeenCalled();
     expect(latestView?.updateTimer).toHaveBeenCalledWith(60);
   });
 
