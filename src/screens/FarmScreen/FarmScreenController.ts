@@ -693,6 +693,7 @@ export class FarmScreenController extends ScreenController {
 
 	private handleMenuSaveAndExit(): void {
         this.status.save();
+		this.hidePlanningUi();
 		this.screenSwitcher.switchToScreen({ type: "main_menu" });
 	}
 
@@ -1033,6 +1034,7 @@ export class FarmScreenController extends ScreenController {
 		this.isGameOver = true;
 		this.stopTimer();
         this.view.clearEmus();
+		this.hidePlanningUi();
 		this.emuTargets.clear();
 		this.updateRoundActionButtonState();
 		this.screenSwitcher.switchToScreen({ 
@@ -1040,6 +1042,17 @@ export class FarmScreenController extends ScreenController {
 			survivalDays: this.status.getDay(),
 			score: this.getFinalScore() 
 		});
+	}
+
+	private hidePlanningUi(): void {
+		this.isPlanningPhase = false;
+		this.isDefensePlacementMode = false;
+		this.selectedDefenseType = null;
+		this.view.setPlacementCursor(false);
+		this.view.setPlacementHint();
+		this.planningPhase?.setPlacementMode(false);
+		this.planningPhase?.clearSelection();
+		this.planningPhase?.hide();
 	}
 }
 

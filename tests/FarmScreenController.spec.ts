@@ -98,6 +98,7 @@ class FakeFarmScreenView {
 }
 
 let latestView: FakeFarmScreenView | null = null;
+let latestPlanningPhase: any = null;
 
 vi.mock("../src/screens/FarmScreen/FarmScreenView.ts", () => ({
   FarmScreenView: vi.fn((
@@ -119,22 +120,25 @@ vi.mock("../src/screens/FarmScreen/FarmScreenView.ts", () => ({
 }));
 
 vi.mock("../src/screens/PlanningPhaseScreen/PlanningPhaseController.ts", () => ({
-  PlanningPhaseController: vi.fn(() => ({
-    getView: vi.fn(() => ({
-      getGroup: vi.fn(() => ({
-        visible: vi.fn(),
+  PlanningPhaseController: vi.fn(() => {
+    latestPlanningPhase = {
+      show: vi.fn(),
+      hide: vi.fn(),
+      setDefenseInventory: vi.fn(),
+      setOnDefenseSelected: vi.fn(),
+      setOnStartRound: vi.fn(),
+      deselectAll: vi.fn(),
+      clearSelection: vi.fn(),
+      setOnPlaceDefenses: vi.fn(),
+      setPlacementMode: vi.fn(),
+      getView: vi.fn(() => ({
+        getGroup: vi.fn(() => ({
+          visible: vi.fn(),
+        })),
       })),
-    })),
-    show: vi.fn(),
-    hide: vi.fn(),
-    setDefenseInventory: vi.fn(),
-    setOnDefenseSelected: vi.fn(),
-    setOnStartRound: vi.fn(),
-    deselectAll: vi.fn(),
-    clearSelection: vi.fn(),
-    setOnPlaceDefenses: vi.fn(),  // Added missing method
-    setPlacementMode: vi.fn(),
-  })),
+    };
+    return latestPlanningPhase;
+  }),
 }));
 
 import { FarmScreenController } from "../src/screens/FarmScreen/FarmScreenController.ts";
@@ -168,6 +172,7 @@ describe("FarmScreenController", () => {
       localStorage.clear();
     }
     latestView = null;
+    latestPlanningPhase = null;
     globalThis.requestAnimationFrame = vi.fn().mockReturnValue(0) as unknown as typeof requestAnimationFrame;
   });
 
@@ -226,6 +231,9 @@ describe("FarmScreenController", () => {
     (controller as any).handleMenuSaveAndExit();
 
     expect(switcher.switchToScreen).toHaveBeenCalledWith({ type: "main_menu" });
+    expect(latestPlanningPhase?.setPlacementMode).toHaveBeenCalledWith(false);
+    expect(latestPlanningPhase?.clearSelection).toHaveBeenCalled();
+    expect(latestPlanningPhase?.hide).toHaveBeenCalled();
 
     const reloadedStatus = new GameStatusController();
     expect(reloadedStatus.getMoney()).toBe(status.getMoney());

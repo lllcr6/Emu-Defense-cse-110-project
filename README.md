@@ -10,12 +10,12 @@ Play now:
 
 ## About
 
-Set on a struggling wheat farm during the Great Emu War, the game blends resource management, real-time defense, and mini-games into one chaotic survival run. Grow crops, build defenses, raid emu territory, and keep your farm alive for as many days as you can.
+Set on a struggling wheat farm during the Great Emu War, the game blends resource management, real-time defense, and mini-games into one chaotic survival run. Grow crops, build and upgrade defenses, raid emu territory, and keep your farm alive for as many days as you can.
 
 ## Gameplay
 
 - Defend every crop on your farm from the emu swarm.
-- Manage money, crops, and defenses across each day.
+- Manage money, crops, and upgradeable defenses across each day.
 - Enter hunting and raid mini-games to earn rewards.
 - Answer the daily quiz to unlock helpful bonuses.
 - Track your best runs with the built-in leaderboard.
@@ -23,7 +23,7 @@ Set on a struggling wheat farm during the Great Emu War, the game blends resourc
 ## How To Play
 
 - Start a new run from the main menu.
-- Protect the farm, expand your defenses, and survive each day.
+- Protect the farm, expand and upgrade your defenses, and survive each day.
 - Use mini-games and rewards to stay one step ahead of the emus.
 
 ## Requirements
