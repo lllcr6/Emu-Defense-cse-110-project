@@ -24,9 +24,9 @@ export class HuntingScreenController extends ScreenController {
   private playerController!: PlayerController;
   private obstacleControllers: ObstacleController[] = [];
   private emuControllers: EmuController[] = [];
-  private bulletControllers: BulletController[] = [];
+	private bulletControllers: BulletController[] = [];
 
-  private keys: Set<string> = new Set();
+	private keys: Set<string> = new Set();
 
   constructor(screenSwitcher: ScreenSwitcher, audioManager: AudioManager, status: GameStatusController ) {
     super();
@@ -112,23 +112,55 @@ export class HuntingScreenController extends ScreenController {
     }
   }
 
-  private onKeyDown(e: KeyboardEvent) {
-    // capture arrow keys and space
-    this.keys.add(e.key);
-    // handle space fire on keydown so repeated fires possible with key repeat
-    if (e.code === "Space" && this.model.canShoot()) {
-      if (this.model.consumeAmmo()) {
-        const bullet = this.playerController.shoot();
-        this.bulletControllers.push(bullet);
-        this.view.getGroup().add(bullet.getGroup());
-        this.view.updateAmmo(this.model.getAmmo());
-        this.audioManager.playSfx("shoot",0.3);
+	private onKeyDown(e: KeyboardEvent) {
+    const movementKey = this.normalizeMovementKey(e.key);
+
+    if (movementKey) {
+      e.preventDefault();
+      this.keys.add(movementKey);
+      return;
+    }
+
+    // Handle space fire on keydown so repeated fires possible with key repeat.
+    if (e.code === "Space") {
+      e.preventDefault();
+      if (this.model.canShoot()) {
+        if (this.model.consumeAmmo()) {
+          const bullet = this.playerController.shoot();
+          this.bulletControllers.push(bullet);
+          this.view.getGroup().add(bullet.getGroup());
+          this.view.updateAmmo(this.model.getAmmo());
+          this.audioManager.playSfx("shoot",0.3);
+        }
       }
     }
   }
 
   private onKeyUp(e: KeyboardEvent) {
-    this.keys.delete(e.key);
+    const movementKey = this.normalizeMovementKey(e.key);
+    if (movementKey) {
+      this.keys.delete(movementKey);
+    }
+  }
+
+  private normalizeMovementKey(key: string): string | null {
+    switch (key) {
+      case "ArrowUp":
+        return "w";
+      case "ArrowDown":
+        return "s";
+      case "ArrowLeft":
+        return "a";
+      case "ArrowRight":
+        return "d";
+      case "w":
+      case "s":
+      case "a":
+      case "d":
+        return key;
+      default:
+        return null;
+    }
   }
 
   private gameLoop = () => {

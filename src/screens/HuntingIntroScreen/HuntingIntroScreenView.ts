@@ -38,41 +38,9 @@ export class HuntingIntroScreenView implements View {
     );
     this.group.add(subtitle);
 
-    const divider = new Konva.Line({
-      points: [152, 214, STAGE_WIDTH - 152, 214],
-      stroke: "rgba(108, 83, 48, 0.34)",
-      strokeWidth: 2,
-      listening: false,
-    });
-    this.group.add(divider);
-
-    const objectiveLabel = new Konva.Text({
-      x: 152,
-      y: 236,
-      text: "OBJECTIVE",
-      fontSize: 14,
-      fontFamily: "Arial",
-      fill: MINIGAME_UI_THEME.accent,
-      fontStyle: "bold",
-      letterSpacing: 2,
-    });
-    this.group.add(objectiveLabel);
-
-    const objectiveText = new Konva.Text({
-      x: 152,
-      y: 260,
-      width: 496,
-      text: "Defeat every emu on the map before you run out of ammo or time.",
-      fontSize: 22,
-      fontFamily: "Georgia",
-      fill: MINIGAME_UI_THEME.body,
-      lineHeight: 1.35,
-    });
-    this.group.add(objectiveText);
-
     const controlsLabel = new Konva.Text({
       x: 152,
-      y: 352,
+      y: 240,
       text: "CONTROLS",
       fontSize: 14,
       fontFamily: "Arial",
@@ -82,12 +50,13 @@ export class HuntingIntroScreenView implements View {
     });
     this.group.add(controlsLabel);
 
-    this.group.add(createMinigameKeycap(152, 384, 260, "W A S D : MOVE"));
-    this.group.add(createMinigameKeycap(152, 430, 260, "SPACE : FIRE"));
+    this.group.add(createMinigameKeycap(152, 272, 260, "W A S D : MOVE"));
+    this.group.add(createMinigameKeycap(152, 318, 260, "SPACE : FIRE"));
+    this.group.add(createMinigameKeycap(152, 364, 260, "↑ ↓ ← → : ALT MOVE"));
 
     const guidance = new Konva.Text({
       x: 152,
-      y: 492,
+      y: 410,
       width: 496,
       text: "Rocks and bushes block your bullets and give emus places to hide, so avoid bad angles and take clean shots when they step out.",
       fontSize: 18,
@@ -100,7 +69,7 @@ export class HuntingIntroScreenView implements View {
 
     const footerHint = createMinigameFooterHint(
       152,
-      566,
+      520,
       496,
       "Press START GAME when you're ready to enter the hunt.",
     );

@@ -5,6 +5,8 @@ import { TILE_TYPE, MAZE_WIDTH, MAZE_HEIGHT } from "./RaidModel";
 import {
 	createMinigameBackdrop,
 	createMinigameButton,
+	createMinigameFooterHint,
+	createMinigameBody,
 	createMinigameGlow,
 	createMinigameKeycap,
 	createMinigamePanel,
@@ -126,41 +128,18 @@ export class RaidView implements View {
 		introTitle.offsetX(introTitle.width() / 2);
 		this.introGroup.add(introTitle);
 
-		const introDivider = new Konva.Line({
-			points: [150, 182, STAGE_WIDTH - 150, 182],
-			stroke: "rgba(108, 83, 48, 0.34)",
-			strokeWidth: 2,
-			listening: false,
-		});
-		this.introGroup.add(introDivider);
-
-		const objective = new Konva.Text({
-			x: 150,
-			y: 204,
-			text: "MISSION",
-			fontSize: 14,
-			fontFamily: "Arial",
-			fill: MINIGAME_UI_THEME.accent,
-			fontStyle: "bold",
-			letterSpacing: 2,
-		});
-		this.introGroup.add(objective);
-
-		const objectiveText = new Konva.Text({
-			x: 150,
-			y: 226,
-			width: 500,
-			text: "Break through walls, gather eggs, and escape through the red exit before the timer hits zero.",
-			fontSize: 22,
-			fontFamily: "Georgia",
-			fill: MINIGAME_UI_THEME.body,
-			lineHeight: 1.35,
-		});
-		this.introGroup.add(objectiveText);
+		const subtitle = createMinigameBody(
+			"Break through walls, gather eggs, and escape through the red exit before the timer hits zero.",
+			150,
+			162,
+			500,
+			18,
+		);
+		this.introGroup.add(subtitle);
 
 		const controlsLabel = new Konva.Text({
 			x: 150,
-			y: 342,
+			y: 240,
 			text: "CONTROLS",
 			fontSize: 14,
 			fontFamily: "Arial",
@@ -170,8 +149,26 @@ export class RaidView implements View {
 		});
 		this.introGroup.add(controlsLabel);
 
-		this.introGroup.add(createMinigameKeycap(150, 374, 250, "W A S D : MOVE"));
-		this.introGroup.add(createMinigameKeycap(150, 420, 300, "SPACE : BREAK WALLS"));
+		this.introGroup.add(createMinigameKeycap(150, 272, 250, "W A S D : MOVE"));
+		this.introGroup.add(createMinigameKeycap(150, 318, 300, "SPACE : BREAK WALLS"));
+		this.introGroup.add(createMinigameKeycap(150, 364, 250, "↑ ↓ ← → : ALT MOVE"));
+
+		const guidance = createMinigameBody(
+			"Look for safe routes, crack open blocked paths, and keep an eye on the exit as you collect every egg.",
+			150,
+			410,
+			500,
+			18,
+		);
+		this.introGroup.add(guidance);
+
+		const footerHint = createMinigameFooterHint(
+			150,
+			520,
+			500,
+			"Press START RAID when you're ready to enter the maze.",
+		);
+		this.introGroup.add(footerHint);
 
 		const startBtn = createMinigameButton(
 			STAGE_WIDTH / 2 - 110,

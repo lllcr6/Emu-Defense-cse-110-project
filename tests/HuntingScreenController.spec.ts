@@ -186,21 +186,28 @@ describe('HuntingScreenController', () => {
       (controller as any).running = true;
     });
 
-    it('should add key to keys set on keydown', () => {
+    it('should map arrow keydown to movement key', () => {
       const event = new KeyboardEvent('keydown', { key: 'ArrowRight' });
       onKeyDown(event);
       
-      expect((controller as any).keys.has('ArrowRight')).toBe(true);
+      expect((controller as any).keys.has('d')).toBe(true);
     });
 
-    it('should remove key from keys set on keyup', () => {
+    it('should remove mapped arrow key from keys set on keyup', () => {
       const addEvent = new KeyboardEvent('keydown', { key: 'ArrowRight' });
       onKeyDown(addEvent);
       
       const removeEvent = new KeyboardEvent('keyup', { key: 'ArrowRight' });
       onKeyUp(removeEvent);
       
-      expect((controller as any).keys.has('ArrowRight')).toBe(false);
+      expect((controller as any).keys.has('d')).toBe(false);
+    });
+
+    it('should keep WASD keydown values unchanged', () => {
+      const event = new KeyboardEvent('keydown', { key: 'w' });
+      onKeyDown(event);
+
+      expect((controller as any).keys.has('w')).toBe(true);
     });
 
     it('should shoot when space is pressed and ammo is available', () => {

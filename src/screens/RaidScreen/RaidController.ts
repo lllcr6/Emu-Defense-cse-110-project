@@ -139,16 +139,16 @@ export class RaidController extends ScreenController {
 		let newX = x;
 		let newY = y;
 
-		// --- CHANGED: WASD Controls ---
-		const key = e.key.toLowerCase();
+		// --- Movement Controls: WASD + Arrow keys ---
+		const key = this.normalizeMovementKey(e.key);
+		if (!key) return;
 		switch (key) {
 			case "w": newY--; break;
 			case "s": newY++; break;
 			case "a": newX--; break;
 			case "d": newX++; break;
-			default: return;
 		}
-		// ------------------------------
+		// ---------------------------------------------
 		
 		e.preventDefault();
 
@@ -196,6 +196,26 @@ export class RaidController extends ScreenController {
 		}
 	}
 
+	private normalizeMovementKey(key: string): string | null {
+		switch (key) {
+			case "ArrowUp":
+				return "w";
+			case "ArrowDown":
+				return "s";
+			case "ArrowLeft":
+				return "a";
+			case "ArrowRight":
+				return "d";
+			case "w":
+			case "a":
+			case "s":
+			case "d":
+				return key;
+			default:
+				return null;
+		}
+	}
+
 	private endGame(didWin: boolean): void {
 		if (this.gameTimer) {
 			clearInterval(this.gameTimer);
@@ -206,13 +226,13 @@ export class RaidController extends ScreenController {
 			// --- WIN CONDITION: Add eggs to inventory ---
 			this.gameStatus.addEmuEggs(this.model.eggsCollected);
 			this.view.showEndPopup(
-				`MISSION COMPLETE!\n\nYou reached the exit with\n${this.model.eggsCollected} eggs!`,
+				`MISSION COMPLETE!\n\nYou reached the exit with\n${this.model.eggsCollected} eggs.\nTake them to the shop to sell for money!`,
 			);
 		} else {
 			// --- LOSS CONDITION: Keep the eggs you already collected ---
 			this.gameStatus.addEmuEggs(this.model.eggsCollected);
 			this.view.showEndPopup(
-				`TIME'S UP!\n\nYou collected ${this.model.eggsCollected} eggs,\nand they still go to the shop.`,
+				`TIME'S UP!\n\nYou collected ${this.model.eggsCollected} eggs.\nTake them to the shop to sell for money!`,
 			);
 		}
 
