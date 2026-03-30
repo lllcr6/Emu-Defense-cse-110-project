@@ -159,9 +159,11 @@ export class FarmScreenController extends ScreenController {
 	startGame(newgame: boolean, returnFromMinigame: boolean = false): void {	
 		const wasGameOver = this.isGameOver;
 		this.isGameOver = false;
+		this.isMenuPaused = false;
 		if (wasGameOver) {
 			this.ensureGameLoopRunning();
 		}
+		this.setEmusPaused(false);
 		if (newgame) {	
 			// Reset model state
 			this.status.reset();
@@ -188,14 +190,6 @@ export class FarmScreenController extends ScreenController {
 				planter.plantForNewGame();
 			});
 		}
-		// Update view
-		this.view.updateScore(this.status.getFinalScore());
-		this.view.hideMenuOverlay();
-		this.resetMines();
-		this.view.updateTimer(this.timeRemaining);
-		this.updateCropDisplay();
-		this.view.show();
-		this.showDefenseTray();
 
 		if (returnFromMinigame) {
 			this.view.hideMenuOverlay();
@@ -207,6 +201,22 @@ export class FarmScreenController extends ScreenController {
 			this.activateRound();
 			return;
 		}
+
+		if (!newgame) {
+			this.showDefenseTray();
+			this.syncHudForUpcomingRound();
+			this.activateRound();
+			return;
+		}
+
+		// Update view for the first day of a new game
+		this.view.updateScore(this.status.getFinalScore());
+		this.view.hideMenuOverlay();
+		this.resetMines();
+		this.view.updateTimer(this.timeRemaining);
+		this.updateCropDisplay();
+		this.view.show();
+		this.showDefenseTray();
 
 		// Show morning screen first, then planning phase
 		this.handleOpenMarket(() => this.prepareFirstRound());

@@ -349,6 +349,39 @@ describe("FarmScreenController", () => {
     expect(updateRoundActionButtonState).not.toHaveBeenCalled();
   });
 
+  it("clears the paused state when continuing a saved farm game", () => {
+    const { controller } = createController();
+    const morningStub = {
+      showOverlay: vi.fn(),
+      setDisplayDayOverride: vi.fn(),
+    } as unknown as MorningEventsScreenController;
+    const emu = {
+      clearTarget: vi.fn(),
+      setBlocked: vi.fn(),
+      isActive: vi.fn(() => true),
+      remove: vi.fn(),
+    } as unknown as FarmEmuController;
+    const planter = {
+      advanceDay: vi.fn(),
+      isEmpty: vi.fn(() => false),
+    };
+
+    controller.setMorningController(morningStub);
+    (controller as any).registerEmu(emu);
+    (controller as any).planters = [planter];
+    (controller as any).isMenuPaused = true;
+    (controller as any).gameTimer = 123;
+
+    (controller as any).startGame(false);
+
+    expect((controller as any).isMenuPaused).toBe(false);
+    expect(emu.setBlocked).toHaveBeenCalledWith(false);
+    expect(planter.advanceDay).not.toHaveBeenCalled();
+    expect(morningStub.showOverlay).not.toHaveBeenCalled();
+    expect(latestPlanningPhase?.setPlacementMode).toHaveBeenCalledWith(true);
+    expect(latestPlanningPhase?.show).toHaveBeenCalled();
+  });
+
   it("deploys a mine when handleDeployMine is called and player has mines", () => {
     const { controller, status } = createController();
     
@@ -437,6 +470,7 @@ describe("FarmScreenController", () => {
     const { controller } = createController();
     const emu = {
       active: true,
+      setBlocked: vi.fn(),
       remove() {
         this.active = false;
       },
